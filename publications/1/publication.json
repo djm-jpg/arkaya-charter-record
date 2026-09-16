@@ -1,0 +1,16 @@
+{
+  "schema": "arkaya-publication/1",
+  "sequence": 1,
+  "published_on": "2026-09-16",
+  "recorded_at": "2026-09-16T16:51:28.097252+00:00",
+  "canonical_uri": "https://record.arkayarisk.com/charter/",
+  "deploy_id": "6aaac22b28ce9dc7b8ecf61d",
+  "deploy_permalink": "https://6aaac22b28ce9dc7b8ecf61d--arkaya-record.netlify.app/",
+  "release_commit": "89f6e53c65ae8405ed050ab92a9625206a6a819b",
+  "release_tag": "release-001",
+  "release_bound_at": "2026-09-16T16:11:39.774755+00:00",
+  "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+  "index_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+  "evidence": "live_verification_20260916T164917.json",
+  "basis": "recorded from a passing, approved live verification of the frozen release at the canonical address on the release date, with every release object validated immediately before recording"
+}

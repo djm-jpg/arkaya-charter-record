@@ -56,9 +56,163 @@ SANDBOX = ("publish", "releases", "verification", "inputs", "vendor", "publicati
            "test_verify_live.py", "test_package.py", "README_source.md",
            "DEPLOY.md", "PUBLICATION_LOG.md")
 
+# Written into a release marker by `record_publication.py`: the first two by
+# `--bind`, the rest when a publication is recorded.
+PUBLICATION_MARKER_KEYS = ("bound_at", "binding_bound", "release_commit",
+                           "release_tag", "published_on", "publication_snapshot")
+
+# The marker fields a freshly built, frozen release carries. Anything outside
+# this set and PUBLICATION_MARKER_KEYS is unclassified and stops the reset.
+BASELINE_MARKER_KEYS = frozenset((
+    "schema", "release_dir", "sequence", "release_date", "built_at",
+    "canonical_base", "manifest_sha256", "index_sha256", "root_pointer_sha256",
+    "builder", "date_mismatch_reason", "versions_awaiting_first_publication",
+    "published", "state"))
+
+CANDIDATE_STATE = "frozen release candidate; not deployed, not published"
+
+
+def _copy_package_into(root):
+    for item in SANDBOX:
+        src = os.path.join(HERE, item)
+        if not os.path.exists(src):
+            continue
+        dst = os.path.join(root, item)
+        if os.path.isdir(src):
+            shutil.copytree(src, dst)
+        else:
+            shutil.copyfile(src, dst)
+    make_writable(root)
+
+
+_UNPUBLISHED_RECORD = None
+
+
+def unpublished_production_record():
+    """The production record as the gate generates it for an unpublished release.
+
+    `verification/` is copied into every sandbox and carries
+    PRODUCTION_RECORD.md. `package.py` regenerates that file whenever it runs,
+    so once a publication has been recorded the working tree holds the published
+    record. Copied unchanged into a sandbox that has been reset to unpublished,
+    it is no longer its own deterministic regeneration and `package.py --check`
+    refuses. Deleting it is not the answer either: the gate then refuses because
+    the record has not been generated, and tests that read the record before
+    running the gate have nothing to read.
+
+    The record is derived, so the baseline is whatever the gate itself produces
+    from a reset tree. Generated once per process and cached. Generation is
+    deterministic and takes no reading of the clock, so one generation serves
+    every sandbox.
+    """
+    global _UNPUBLISHED_RECORD
+    if _UNPUBLISHED_RECORD is None:
+        scratch = tempfile.mkdtemp(prefix="gate-record-")
+        try:
+            _copy_package_into(scratch)
+            reset_publication_state(scratch)
+            record = os.path.join(scratch, "verification", "PRODUCTION_RECORD.md")
+            if os.path.isfile(record):
+                os.unlink(record)
+            # PVR_SKIP_TESTS is right here and only here: this run exists to
+            # regenerate one derived file, not to gate anything. The suites it
+            # skips are the suites this module is.
+            env = dict(os.environ, PVR_SKIP_TESTS="1")
+            r = subprocess.run([sys.executable, "package.py"], cwd=scratch,
+                               env=env, capture_output=True, text=True)
+            if r.returncode != 0 or not os.path.isfile(record):
+                raise AssertionError(
+                    "could not generate the unpublished production record that "
+                    "every sandbox starts from:\n" + r.stdout[-3000:] + r.stderr[-1000:])
+            with open(record) as f:
+                _UNPUBLISHED_RECORD = f.read()
+        finally:
+            shutil.rmtree(scratch, ignore_errors=True)
+    return _UNPUBLISHED_RECORD
+
+
+def reset_publication_state(root):
+    """Clear the recorded publication and the release binding.
+
+    The state half of the reset, separated so that the cached record above can
+    use it without recursing. Callers want `reset_to_unpublished`.
+    """
+    releases = os.path.join(root, "releases")
+    for name in sorted(os.listdir(releases)):
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(releases, name)
+        with open(path) as f:
+            marker = json.load(f)
+
+        unknown = set(marker) - BASELINE_MARKER_KEYS - set(PUBLICATION_MARKER_KEYS)
+        if unknown:
+            raise AssertionError(
+                f"{name} carries unclassified marker field(s) {sorted(unknown)}. "
+                f"Add each to BASELINE_MARKER_KEYS if a frozen release carries it, "
+                f"or to PUBLICATION_MARKER_KEYS if recording writes it. Left "
+                f"unclassified it would leak publication state into every sandbox.")
+
+        for key in PUBLICATION_MARKER_KEYS:
+            marker.pop(key, None)
+        marker["published"] = False
+        marker["state"] = CANDIDATE_STATE
+        with open(path, "w") as f:
+            json.dump(marker, f, indent=2)
+
+        assert marker["published"] is False, name
+        assert not [k for k in PUBLICATION_MARKER_KEYS if k in marker], name
+
+    # publications/ ships carrying only its own README. Recorded sequences are
+    # directories beside it and must not survive into a sandbox.
+    publications = os.path.join(root, "publications")
+    if os.path.isdir(publications):
+        for name in sorted(os.listdir(publications)):
+            if name == "README.md":
+                continue
+            target = os.path.join(publications, name)
+            shutil.rmtree(target) if os.path.isdir(target) else os.unlink(target)
+        assert os.listdir(publications) == ["README.md"], os.listdir(publications)
+
+
+def reset_to_unpublished(root):
+    """Return a sandbox to an explicit unpublished, unbound baseline.
+
+    DM's finding, 16 September 2026, at runbook step 97. `Sandbox` copied
+    `releases`, `publications` and `verification` verbatim out of the working
+    tree. That was harmless until a publication had been recorded; afterwards
+    every sandbox inherited `published: true`, the release binding, the
+    `publications/1` snapshot and the regenerated published production record.
+    31 of 55 tests then failed on fixture state rather than on the behaviour
+    under test, so `package.py` could never complete once
+    `record_publication.py` had run and runbook steps 88 and 97 could not both
+    succeed in the order the runbook gives them. The sandbox was not hermetic.
+
+    Reproduced on a pristine extraction of the shipped archive by injecting
+    nothing but the post-publication state: `releases/publish.json` alone gave
+    31 failures, `publications/1` alone gave 15, both gave 31, and the
+    untouched tree passed 55 of 55.
+
+    The reset is explicit, not best-effort. The baseline is asserted afterwards,
+    so a marker field added later that records publication stops the fixture
+    here with a message instead of silently contaminating it again. The ledgers
+    `first_publication.json` and `published_indexes.json` need no handling: they
+    are not in SANDBOX, so they are never copied, and the recorder writes them.
+    """
+    reset_publication_state(root)
+    record = os.path.join(root, "verification", "PRODUCTION_RECORD.md")
+    if os.path.isdir(os.path.dirname(record)):
+        with open(record, "w") as f:
+            f.write(unpublished_production_record())
+
 
 class Sandbox(unittest.TestCase):
-    """A private copy of the package, already built, verified and packaged once."""
+    """A private copy of the package, built and verified, explicitly unpublished.
+
+    Every sandbox starts from the same baseline whatever state the working tree
+    is in, so the suite behaves identically before and after a publication has
+    been recorded.
+    """
 
     def setUp(self):
         self.dir = tempfile.mkdtemp(prefix="gate-test-")
@@ -72,6 +226,7 @@ class Sandbox(unittest.TestCase):
             else:
                 shutil.copyfile(src, dst)
         make_writable(self.dir)
+        reset_to_unpublished(self.dir)
 
     def tearDown(self):
         shutil.rmtree(self.dir, ignore_errors=True)
@@ -755,6 +910,71 @@ class TestInterruptedPublication(PublicationBase):
         pubs = os.path.join(self.dir, "publications")
         leftovers = [d for d in os.listdir(pubs) if d.startswith(".staging")]
         self.assertEqual([], leftovers)
+
+
+class TestGateAfterPublication(PublicationBase):
+    """The gate must pass from a working tree that has already published.
+
+    Runbook step 97 runs `package.py` after step 88 has recorded publication.
+    Nothing exercised that order until the live sequence reached it, and the
+    gate refused. This test holds the order open: it records a publication in a
+    sandbox, then runs the complete gate there, test stage included.
+
+    PVR_NO_RECURSE terminates the nesting. The gate under test runs this file,
+    which reaches this class again; the guard skips it at that depth. Every
+    other test still runs, so the inner gate is a real gate, and the tests it
+    runs spawn `package.py` with PVR_SKIP_TESTS as they always have.
+    """
+
+    def test_the_full_gate_passes_after_a_publication_is_recorded(self):
+        if os.environ.get("PVR_NO_RECURSE") == "1":
+            self.skipTest("inner gate; the outer run is the one under test")
+
+        self.assertEqual(0, self.record(self.evidence()).returncode)
+
+        # The sandbox is now in exactly the state that refused: published,
+        # bound, and carrying its snapshot.
+        with open(self.release_meta_path()) as f:
+            marker = json.load(f)
+        self.assertIs(True, marker["published"])
+        self.assertIn("release_commit", marker)
+        self.assertTrue(os.path.isdir(os.path.join(self.dir, "publications", "1")))
+
+        env = dict(os.environ, PVR_NO_RECURSE="1")
+        env.pop("PVR_SKIP_TESTS", None)
+        r = subprocess.run([sys.executable, "package.py"], cwd=self.dir,
+                           env=env, capture_output=True, text=True)
+        self.assertEqual(0, r.returncode, r.stdout[-4000:] + r.stderr[-2000:])
+        self.assertIn("gate tests", r.stdout)
+        self.assertNotIn("PACKAGE REFUSED", r.stdout)
+        self.assertNotIn("SKIPPED (PVR_SKIP_TESTS=1)", r.stdout)
+
+    def test_a_sandbox_is_unpublished_whatever_the_working_tree_holds(self):
+        """The reset is asserted, not assumed. Guards the fixture itself."""
+        with open(self.release_meta_path()) as f:
+            marker = json.load(f)
+        self.assertIs(False, marker["published"])
+        self.assertEqual(CANDIDATE_STATE, marker["state"])
+        for key in ("published_on", "publication_snapshot"):
+            self.assertNotIn(key, marker)
+        self.assertEqual(["README.md"],
+                         sorted(os.listdir(os.path.join(self.dir, "publications"))))
+
+    # AUTOBIND rebinds in setUp, so the binding keys are expected here; the
+    # unbound half of the baseline is what that must not mask.
+    def test_the_reset_clears_the_binding_before_setup_rebinds(self):
+        fresh = tempfile.mkdtemp(prefix="gate-reset-")
+        self.addCleanup(shutil.rmtree, fresh, True)
+        for item in ("releases", "publications"):
+            src = os.path.join(HERE, item)
+            if os.path.isdir(src):
+                shutil.copytree(src, os.path.join(fresh, item))
+        make_writable(fresh)
+        reset_to_unpublished(fresh)
+        with open(os.path.join(fresh, "releases", "publish.json")) as f:
+            marker = json.load(f)
+        for key in PUBLICATION_MARKER_KEYS:
+            self.assertNotIn(key, marker)
 
 
 if __name__ == "__main__":

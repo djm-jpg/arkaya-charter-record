@@ -21,12 +21,10 @@
     "v2",
     "v3"
   ],
-  "published": true,
-  "state": "published; recorded from live evidence",
+  "published": false,
+  "state": "frozen release candidate; not deployed, not published",
   "release_commit": "89f6e53c65ae8405ed050ab92a9625206a6a819b",
   "release_tag": "release-001",
   "bound_at": "2026-09-16T16:11:39.774755+00:00",
-  "binding_bound": "binds this frozen release to a commit identifier supplied by the operator. It does not verify that the commit exists in any repository, or that the repository holds these bytes.",
-  "published_on": "2026-09-16",
-  "publication_snapshot": "publications/1/"
+  "binding_bound": "binds this frozen release to a commit identifier supplied by the operator. It does not verify that the commit exists in any repository, or that the repository holds these bytes."
 }

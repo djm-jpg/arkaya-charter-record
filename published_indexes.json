@@ -1,4 +1,14 @@
 {
   "note": "Every index made current, with the path to its immutable snapshot under publications/. A sequence is never reused for different content. This ledger records hashes; the snapshot holds the files themselves.",
-  "versions": {}
+  "versions": {
+    "1": {
+      "index_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+      "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+      "made_current_on": "2026-09-16",
+      "recorded_at": "2026-09-16T16:51:28.097252+00:00",
+      "snapshot": "publications/1/",
+      "deploy_id": "6aaac22b28ce9dc7b8ecf61d",
+      "release_commit": "89f6e53c65ae8405ed050ab92a9625206a6a819b"
+    }
+  }
 }

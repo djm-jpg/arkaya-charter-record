@@ -1,4 +1,29 @@
 {
   "note": "First publication date per version. Written only by record_publication.py, against a passing live verification at the canonical address. Once set, never changed by a later build.",
-  "versions": {}
+  "versions": {
+    "v1": {
+      "first_published": "2026-09-16",
+      "sequence": 1,
+      "recorded_at": "2026-09-16T16:51:28.097252+00:00",
+      "evidence": "publications/1/live_verification.json"
+    },
+    "v1.1": {
+      "first_published": "2026-09-16",
+      "sequence": 1,
+      "recorded_at": "2026-09-16T16:51:28.097252+00:00",
+      "evidence": "publications/1/live_verification.json"
+    },
+    "v2": {
+      "first_published": "2026-09-16",
+      "sequence": 1,
+      "recorded_at": "2026-09-16T16:51:28.097252+00:00",
+      "evidence": "publications/1/live_verification.json"
+    },
+    "v3": {
+      "first_published": "2026-09-16",
+      "sequence": 1,
+      "recorded_at": "2026-09-16T16:51:28.097252+00:00",
+      "evidence": "publications/1/live_verification.json"
+    }
+  }
 }

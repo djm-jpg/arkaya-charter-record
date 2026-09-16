@@ -8,19 +8,28 @@ regenerates it and compares byte for byte, so a figure printed against the wrong
 different file and is rejected. An earlier version checked only whether a digest appeared
 somewhere in the evidence, and passed when v1.1's digest was substituted into v1's row.
 
-**Status as at 2026-09-16: frozen release candidate. Architecture and transaction controls rehearsed. Publication not yet authorised or observed.**
+**Status: published. Sequence 1 was recorded as published on 2026-09-16, from a passing, approved live verification of this frozen release at https://record.arkayarisk.com/charter/.**
 
-This is a dated pre-deployment assessment. Not "deployment candidate successfully verified": the
-decisive verification requires HTTPS at the canonical venue. Publication dates become
-first-publication dates only when `record_publication.py` records them against a passing,
-approved live verification at that address, and this record is regenerated when it does. As at
-the date above, no Netlify project, repository or DNS record had been created.
+| | |
+|---|---|
+| Published on | 2026-09-16 |
+| Recorded at | 2026-09-16T16:51:28.097252+00:00 |
+| Deploy ID | `6aaac22b28ce9dc7b8ecf61d` |
+| Deploy permalink | https://6aaac22b28ce9dc7b8ecf61d--arkaya-record.netlify.app/ |
+| Frozen-release commit | `89f6e53c65ae8405ed050ab92a9625206a6a819b` |
+| Frozen-release tag | `release-001` |
+| Live evidence | `live_verification_20260916T164917.json` |
+| Immutable snapshot | `publications/1/` |
+
+Recorded from a passing, approved live verification of the frozen release at the canonical address on the release date, with every release object validated immediately before recording.
+
+What that does **not** establish is unchanged by publication, and is set out in section 1.
 
 ## 0. Three facts, three artefacts, not to be conflated
 
 | Artefact | What it asserts | What it does not |
 |---|---|---|
-| The frozen-release tag | These are the bytes intended for publication | Nothing about whether they were deployed or observed |
+| `release-001` (tag on the frozen-release commit) | These are the bytes intended for publication | Nothing about whether they were deployed or observed |
 | The live verification evidence | These bytes were observed at the canonical venue, matching this manifest object by object | Nothing about the Charter, and nothing about continuity beyond the moment of observation |
 | The publication-evidence tag, recorded once it exists | The evidence record **that** publication occurred | **It is not the published object.** It necessarily post-dates the deployment it records, and must not be read as the released set |
 
@@ -53,8 +62,8 @@ separate questions and remain exactly where they were. No run below touches eith
 | Canonical base | `https://record.arkayarisk.com/charter` |
 | Manifest SHA-256 | `b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6` |
 | Index SHA-256 | `8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a` |
-| Published | false |
-| State | frozen release candidate; not deployed, not published |
+| Published | true |
+| State | published; recorded from live evidence |
 
 The freeze marker lives at `releases/publish.json`, outside the release directory,
 so nothing internal is ever served. The release is built once and packaged as built.
@@ -164,7 +173,7 @@ PVR_CONTROL_URL=http://127.0.0.1:<port>/definitely-not-here
 **The frozen release was not mutated by any run.** The mutation and removal tests operate on a
 served copy; the release directory is read-only input to the verification.
 
-**Where the recorder path was exercised with synthetic evidence, the bound is:** the successful recorder path was tested using synthetic evidence representing an approved live observation. This demonstrates recorder behaviour given approval; it does not demonstrate that publication or live verification occurred.
+**The live evidence for this publication is recorded in `publications/1/live_verification.json`.** The runs in this section are local; they are not that evidence.
 
 **Each run declares the outcome it must produce**, in `expectations.py`, which the harness and
 this gate both import. The columns below are **re-read from the retained transcripts** by the
