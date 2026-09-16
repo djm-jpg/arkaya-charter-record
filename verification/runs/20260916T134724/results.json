@@ -1,0 +1,299 @@
+{
+  "schema": "arkaya-verification-results/2",
+  "generated_at": "2026-09-16T13:47:24.066320+00:00",
+  "run_dir": "verification/runs/20260916T134724",
+  "scope": "Local HTTP, one process, one machine. These runs say nothing about the behaviour of record.arkayarisk.com, which does not yet exist.",
+  "spec_parameters": {
+    "PVR_LINEAGE": "v1,v1.1,v2,v3",
+    "PVR_EXPECTED_CURRENT": "v3",
+    "PVR_ESTABLISHED": "2026-09-16",
+    "PUBLIC_VERSION_RECORD_URL": "http://127.0.0.1:<port>/",
+    "PVR_CONTROL_URL": "http://127.0.0.1:<port>/definitely-not-here"
+  },
+  "acceptance_suite": {
+    "source": "OPS_QA_PublicVersionRecord_AcceptanceSuite_v10",
+    "retained_at": "vendor/acceptance_suite/",
+    "files": {
+      "README.md": "f133d7bad53a616a393d8dd10b2cec95e3b9842849cd9bdbeb4cf3806a600a17",
+      "__pycache__/checks.cpython-311.pyc": "2dcf16e8bfb848b296b367439ec551d27f97681fad1ac2b7b2ca6cc491137978",
+      "__pycache__/fixtures.cpython-311.pyc": "d2e9affaee4b0e05bfb6257536b560c0359148388ec6a552ea2aa201223e169d",
+      "__pycache__/live.cpython-311.pyc": "25e8fa90c01b03291afe25a56e67559c70cad7a2056cd7468d311778cd74ab00",
+      "__pycache__/model.cpython-311.pyc": "02a9995d2c2dc01a18f87b55fb426065a8d5cedc89aa7ebb0d5cbac9155c2c38",
+      "checks.py": "12e1737143b305a6a7b21b82ac4a529e620acfaa793d971168a7877db88da172",
+      "fixtures.py": "3187785334be6364f39398ded139a655f297084cef5d5e10a6db7b189b11e16b",
+      "live.py": "15cea423756871f01516b0df52e86f2f9a4d83c225206e48ddddbbcfe8395efa",
+      "model.py": "290ee5c6c06487b15c06a98c5199ab504fe4313a735102c25a94c054f7d95ac3",
+      "run_acceptance.py": "c031f414939a391f294d509c50f2a84cdeedf614b20e137d318787259823120d",
+      "test_baseline.py": "0297caecf90352c14b1da33a50b242160d7455bb4c02efbdb80bdb796ce6e62c",
+      "test_sequences.py": "3a70658c7efc9cb030d8349b5bb209f3a66963c944113c212f9e7b2f5192d158"
+    },
+    "digest_of_file_digests": "e86cff6681ee007c13b665b4427a065495c49980220aab09af0587ed74cbf455"
+  },
+  "record_under_test": {
+    "release": "publish",
+    "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+    "sequence": 1,
+    "release_date": "2026-09-16",
+    "builder": {
+      "script": "build_publication_set.py",
+      "source_path": "build_publication_set.py",
+      "version": "2026-09-16.4",
+      "sha256": "311f9f110cd376d37f2d56ddde03930d7d339ae7ab7439a506f947dbeca72346"
+    },
+    "frozen": true,
+    "mutated_during_testing": false
+  },
+  "expected_labels": [
+    "run01_first_observation",
+    "run02_baseline_established",
+    "run03_v1_mutation",
+    "run03_v1_1_mutation",
+    "run03_v2_mutation",
+    "run03_v3_mutation",
+    "run04a_object_removed",
+    "run04b_entry_removed_from_index",
+    "run05_after_restoration",
+    "run06_after_rebuild"
+  ],
+  "rebuild_comparison": "run06_rebuild.json",
+  "runs": [
+    {
+      "label": "run01_first_observation",
+      "note": "First observation against an empty baseline store. Checks 8 and 12 cannot be satisfied: there is no prior inventory to compare against. This run also ESTABLISHES the baseline, accepting the record as it stands. It shows the suite reporting the absence of comparison rather than passing; it is not evidence that the record was preserved.",
+      "expected": {
+        "exit_status": 1,
+        "checks_failed": [
+          "12",
+          "8"
+        ],
+        "baseline": "established"
+      },
+      "exit_status": 1,
+      "checks_failed": [
+        "12 membership retained  no prior inventory; removal cannot be detected on a first observation",
+        "8 no silent revision  prior entries can be replaced in place"
+      ],
+      "baseline_note": "baseline established",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run01_first_observation.txt",
+      "transcript_sha256": "2bc301919687ec7ccc23282c3bc372ba90bbb8eaa7b6c5aeb47c9fc9379eaae8",
+      "baseline_after": "verification/runs/20260916T134724/run01_first_observation.snapshot.json",
+      "baseline_after_sha256": "f14b177b2be4923e1adfe7084ed904d88be1f70b6feea92f781df1fd46ca6dec"
+    },
+    {
+      "label": "run02_baseline_established",
+      "note": "Second observation, record unchanged. All twelve pass because a prior inventory now exists to compare against.",
+      "expected": {
+        "exit_status": 0,
+        "checks_failed": [],
+        "baseline": "advanced"
+      },
+      "exit_status": 0,
+      "checks_failed": [],
+      "baseline_note": "baseline advanced",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run02_baseline_established.txt",
+      "transcript_sha256": "01e5baa19ad446fd147576a495840115c54939e90c2cc57127b2720ef880a80e",
+      "baseline_after": "verification/runs/20260916T134724/run02_baseline_established.snapshot.json",
+      "baseline_after_sha256": "becb7d8ef471ad6406a08dca97c0fae4f3cb9029c6701bd61b3493b2fa83d4d1"
+    },
+    {
+      "label": "run03_v1_mutation",
+      "note": "Deliberate mutation of charter-v1.pdf in the served copy: 8 bytes appended. 03794ff916330d36e551ccb0d98a173c5205e98c27eb35124a7466eedc776e6e -> d098ec3b44b32e3869aa7d07cce7754905b10b3fe017ad806dd2409ec683d6fc. Check 11 must fail and the baseline must be HELD, so a repeat run against the altered file fails again rather than accepting it.",
+      "expected": {
+        "exit_status": 1,
+        "checks_failed": [
+          "11"
+        ],
+        "baseline": "HELD"
+      },
+      "exit_status": 1,
+      "checks_failed": [
+        "11 entry digests match  digest mismatch: v1"
+      ],
+      "baseline_note": "baseline HELD: observation was not clean",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run03_v1_mutation.txt",
+      "transcript_sha256": "d0cdda454f71db599f8d98079b6a21d9649398ee8b3412f65abcb57a1956de0d",
+      "baseline_after": "verification/runs/20260916T134724/run03_v1_mutation.snapshot.json",
+      "baseline_after_sha256": "cfb5c23ee2f022eebbabcf8410473d43e94dd3b73cbb8f568affc9da92640d8e"
+    },
+    {
+      "label": "run03_v1_1_mutation",
+      "note": "Deliberate mutation of charter-v1.1.pdf in the served copy: 8 bytes appended. 2d55ac0b81e07fee580e4784126c2d581b7acaec70ee55f84f5f0bec1bac0897 -> 24ecbb4fd11125bc7114ad45c158cecd06ddfcc6db55082229a7c5269cf9550a. Check 11 must fail and the baseline must be HELD, so a repeat run against the altered file fails again rather than accepting it.",
+      "expected": {
+        "exit_status": 1,
+        "checks_failed": [
+          "11"
+        ],
+        "baseline": "HELD"
+      },
+      "exit_status": 1,
+      "checks_failed": [
+        "11 entry digests match  digest mismatch: v1.1"
+      ],
+      "baseline_note": "baseline HELD: observation was not clean",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run03_v1_1_mutation.txt",
+      "transcript_sha256": "fed2ad70eea90924f2b0eb1e4422bc5ca54dd2fcf834e8de39da67f981ced62c",
+      "baseline_after": "verification/runs/20260916T134724/run03_v1_1_mutation.snapshot.json",
+      "baseline_after_sha256": "53b73bffe0330c9967e33b2eb4d0bc2c743fa3ce946539ab2f553bf08284decf"
+    },
+    {
+      "label": "run03_v2_mutation",
+      "note": "Deliberate mutation of charter-v2.pdf in the served copy: 8 bytes appended. 1df3e103e94515c5fbaf8792c5f09f4b539cd919ed65d7d3892d3001fc1ca12b -> 90909bc70f66d81833571e6c57e5d11ddc058f6b766db2f7d9cde67a240326ef. Check 11 must fail and the baseline must be HELD, so a repeat run against the altered file fails again rather than accepting it.",
+      "expected": {
+        "exit_status": 1,
+        "checks_failed": [
+          "11"
+        ],
+        "baseline": "HELD"
+      },
+      "exit_status": 1,
+      "checks_failed": [
+        "11 entry digests match  digest mismatch: v2"
+      ],
+      "baseline_note": "baseline HELD: observation was not clean",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run03_v2_mutation.txt",
+      "transcript_sha256": "18b3da3cac7d2f780f6324b84d4ba7a81296306f9f45df16d1a88f104562199d",
+      "baseline_after": "verification/runs/20260916T134724/run03_v2_mutation.snapshot.json",
+      "baseline_after_sha256": "4522578aac37d926aa0879c02533c7ada02c577e2f31b4be205d5be32e4d46af"
+    },
+    {
+      "label": "run03_v3_mutation",
+      "note": "Deliberate mutation of charter-v3.pdf in the served copy: 8 bytes appended. 751972efbfa4fb6070b6c9b36f289211937cfcf97724511743a1e1251d752ba5 -> 45602c27b1d3a8083c95a7d83d9a822193ed78618e7e57a21447b37a79dd2a68. Check 11 must fail and the baseline must be HELD, so a repeat run against the altered file fails again rather than accepting it.",
+      "expected": {
+        "exit_status": 1,
+        "checks_failed": [
+          "11"
+        ],
+        "baseline": "HELD"
+      },
+      "exit_status": 1,
+      "checks_failed": [
+        "11 entry digests match  digest mismatch: v3"
+      ],
+      "baseline_note": "baseline HELD: observation was not clean",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run03_v3_mutation.txt",
+      "transcript_sha256": "3eae8062b65db03e2f0386e3139123f99323e084299c3d3786d0a7d53823fefb",
+      "baseline_after": "verification/runs/20260916T134724/run03_v3_mutation.snapshot.json",
+      "baseline_after_sha256": "0678c581763cdbc44865198b59fbd4bb91d447038858a0817b013ed110dbc294"
+    },
+    {
+      "label": "run04a_object_removed",
+      "note": "The v1.1 PDF is removed while the index still lists it. Retrievability (check 10) fails. Membership is unaffected because the index has not changed: the two failures are distinct and this run does not exercise check 12.",
+      "expected": {
+        "exit_status": 1,
+        "checks_failed": [
+          "10"
+        ],
+        "baseline": "HELD"
+      },
+      "exit_status": 1,
+      "checks_failed": [
+        "10 entries retrievable  does not resolve: v1.1"
+      ],
+      "baseline_note": "baseline HELD: observation was not clean",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run04a_object_removed.txt",
+      "transcript_sha256": "6d7ea07809d30640d3cb00b30a581d01de39e0a02e0c0c7369c9dcb76a6dd648",
+      "baseline_after": "verification/runs/20260916T134724/run04a_object_removed.snapshot.json",
+      "baseline_after_sha256": "0c2412102e9a5f4b090ac50c753c5c48d2ea8b328833aad3947336c37d8e0a47"
+    },
+    {
+      "label": "run04b_entry_removed_from_index",
+      "note": "The v1.1 ENTRY is removed from the published index while the PDF remains in place. This is what a silent removal looks like from outside, and membership retention against the accepted baseline is what detects it.",
+      "expected": {
+        "exit_status": 1,
+        "checks_failed": [
+          "12",
+          "3"
+        ],
+        "baseline": "HELD"
+      },
+      "exit_status": 1,
+      "checks_failed": [
+        "12 membership retained  present at baseline, absent now: v1.1",
+        "3 prior versions  absent: v1.1"
+      ],
+      "baseline_note": "baseline HELD: observation was not clean",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run04b_entry_removed_from_index.txt",
+      "transcript_sha256": "2e200496ff5d40af5a3bd8e8cb2775ce1c6a9c34f5cec1a0ec4c24492f6d24b1",
+      "baseline_after": "verification/runs/20260916T134724/run04b_entry_removed_from_index.snapshot.json",
+      "baseline_after_sha256": "a67ed9cb0f10e02b9277b0df039aa1c937ab236177dba748b17b0a91f7d544a5"
+    },
+    {
+      "label": "run05_after_restoration",
+      "note": "The served copy is restored to the frozen release. The run is clean again, which shows the failures above tracked the record rather than latching.",
+      "expected": {
+        "exit_status": 0,
+        "checks_failed": [],
+        "baseline": "advanced"
+      },
+      "exit_status": 0,
+      "checks_failed": [],
+      "baseline_note": "baseline advanced",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run05_after_restoration.txt",
+      "transcript_sha256": "01e5baa19ad446fd147576a495840115c54939e90c2cc57127b2720ef880a80e",
+      "baseline_after": "verification/runs/20260916T134724/run05_after_restoration.snapshot.json",
+      "baseline_after_sha256": "74cfb9ca8bf998f855511859707cf6c5e993877681f3c67d6ab09455dffb8587"
+    },
+    {
+      "label": "run06_after_rebuild",
+      "note": "Observation against the independently rebuilt set. The index, the page and the four PDFs are bit-identical to the frozen release, so the preservation checks pass against the same accepted baseline.",
+      "expected": {
+        "exit_status": 0,
+        "checks_failed": [],
+        "baseline": "advanced"
+      },
+      "exit_status": 0,
+      "checks_failed": [],
+      "baseline_note": "baseline advanced",
+      "as_expected": true,
+      "deviations": [],
+      "transcript": "verification/runs/20260916T134724/run06_after_rebuild.txt",
+      "transcript_sha256": "01e5baa19ad446fd147576a495840115c54939e90c2cc57127b2720ef880a80e",
+      "baseline_after": "verification/runs/20260916T134724/run06_after_rebuild.snapshot.json",
+      "baseline_after_sha256": "f61c017ae0aea0bc9fe9afbbc87af9dc4501ca7312ff2f2177a65f232dff1bdd"
+    }
+  ],
+  "rebuild": {
+    "exit_status": 0,
+    "stderr": "",
+    "built_into": "a separate directory; the frozen release was not touched",
+    "objects_compared": 9,
+    "expected_to_change": [
+      "manifest.json",
+      "manifest.json.sha256"
+    ],
+    "changed": [
+      "manifest.json",
+      "manifest.json.sha256"
+    ],
+    "unexpected_changes": [],
+    "expected_change_not_observed": [],
+    "membership_identical": true,
+    "pdfs_compared": [
+      "v1.1/charter-v1.1.pdf",
+      "v1/charter-v1.pdf",
+      "v2/charter-v2.pdf",
+      "v3/charter-v3.pdf"
+    ],
+    "passed": true
+  },
+  "all_runs_as_expected": true,
+  "deviations": []
+}

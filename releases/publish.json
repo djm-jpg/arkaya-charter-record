@@ -1,0 +1,26 @@
+{
+  "schema": "arkaya-release/1",
+  "release_dir": "publish",
+  "sequence": 1,
+  "release_date": "2026-09-16",
+  "built_at": "2026-09-16T13:47:23.974303+00:00",
+  "canonical_base": "https://record.arkayarisk.com/charter",
+  "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+  "index_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+  "root_pointer_sha256": "5feecd78e998e8b71db5e57d1edb26b05e40665a1d545c3b5efd9f03dadafdfa",
+  "builder": {
+    "script": "build_publication_set.py",
+    "source_path": "build_publication_set.py",
+    "version": "2026-09-16.4",
+    "sha256": "311f9f110cd376d37f2d56ddde03930d7d339ae7ab7439a506f947dbeca72346"
+  },
+  "date_mismatch_reason": null,
+  "versions_awaiting_first_publication": [
+    "v1",
+    "v1.1",
+    "v2",
+    "v3"
+  ],
+  "published": false,
+  "state": "frozen release candidate; not deployed, not published"
+}

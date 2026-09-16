@@ -1,0 +1,4 @@
+{
+  "note": "Every index made current, with the path to its immutable snapshot under publications/. A sequence is never reused for different content. This ledger records hashes; the snapshot holds the files themselves.",
+  "versions": {}
+}

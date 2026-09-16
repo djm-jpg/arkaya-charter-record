@@ -1,0 +1,48 @@
+{
+  "before": {
+    "manifest.json.sha256": "68972c26ac2bef76617f63acf05367dc6e4d9b1be538bb7abc4536a63c4c75e6",
+    "README.md": "b666a29e9c69ff87871dd63c17946cf98cec9f3d5d3aa13b0780501c7ff23cbf",
+    "index.html": "84770dcb5e0d45bca3bc5874129745378f17751925a33d5ec9befea3249127c0",
+    "manifest.json": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+    "index.json": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+    "v1/charter-v1.pdf": "03794ff916330d36e551ccb0d98a173c5205e98c27eb35124a7466eedc776e6e",
+    "v1.1/charter-v1.1.pdf": "2d55ac0b81e07fee580e4784126c2d581b7acaec70ee55f84f5f0bec1bac0897",
+    "v2/charter-v2.pdf": "1df3e103e94515c5fbaf8792c5f09f4b539cd919ed65d7d3892d3001fc1ca12b",
+    "v3/charter-v3.pdf": "751972efbfa4fb6070b6c9b36f289211937cfcf97724511743a1e1251d752ba5"
+  },
+  "after": {
+    "manifest.json.sha256": "b6910427e64267995f29adbbb1654075e4d2de8ea949f23943cdca11a504d1ab",
+    "README.md": "b666a29e9c69ff87871dd63c17946cf98cec9f3d5d3aa13b0780501c7ff23cbf",
+    "index.html": "84770dcb5e0d45bca3bc5874129745378f17751925a33d5ec9befea3249127c0",
+    "manifest.json": "358d10213b53cb73c93fb61701c8fa32afc67597e52b2cf06dd9e3425b9fa04c",
+    "index.json": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+    "v1/charter-v1.pdf": "03794ff916330d36e551ccb0d98a173c5205e98c27eb35124a7466eedc776e6e",
+    "v1.1/charter-v1.1.pdf": "2d55ac0b81e07fee580e4784126c2d581b7acaec70ee55f84f5f0bec1bac0897",
+    "v2/charter-v2.pdf": "1df3e103e94515c5fbaf8792c5f09f4b539cd919ed65d7d3892d3001fc1ca12b",
+    "v3/charter-v3.pdf": "751972efbfa4fb6070b6c9b36f289211937cfcf97724511743a1e1251d752ba5"
+  },
+  "result": {
+    "exit_status": 0,
+    "stderr": "",
+    "built_into": "a separate directory; the frozen release was not touched",
+    "objects_compared": 9,
+    "expected_to_change": [
+      "manifest.json",
+      "manifest.json.sha256"
+    ],
+    "changed": [
+      "manifest.json",
+      "manifest.json.sha256"
+    ],
+    "unexpected_changes": [],
+    "expected_change_not_observed": [],
+    "membership_identical": true,
+    "pdfs_compared": [
+      "v1.1/charter-v1.1.pdf",
+      "v1/charter-v1.pdf",
+      "v2/charter-v2.pdf",
+      "v3/charter-v3.pdf"
+    ],
+    "passed": true
+  }
+}

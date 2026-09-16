@@ -1,0 +1,28 @@
+{
+  "observations": [
+    {
+      "at": "2026-09-16T15:37:02.018231+00:00",
+      "clean": false,
+      "versions": [
+        "v1",
+        "v1.1",
+        "v2",
+        "v3"
+      ],
+      "digest_mismatches": [],
+      "missing_since_baseline": []
+    }
+  ],
+  "schema": "pvr-baseline/1",
+  "accepted": {
+    "versions": {
+      "v1": "sha256:03794ff916330d36e551ccb0d98a173c5205e98c27eb35124a7466eedc776e6e",
+      "v1.1": "sha256:2d55ac0b81e07fee580e4784126c2d581b7acaec70ee55f84f5f0bec1bac0897",
+      "v2": "sha256:1df3e103e94515c5fbaf8792c5f09f4b539cd919ed65d7d3892d3001fc1ca12b",
+      "v3": "sha256:751972efbfa4fb6070b6c9b36f289211937cfcf97724511743a1e1251d752ba5"
+    },
+    "at": "2026-09-16T15:37:02.018231+00:00",
+    "reason": "first observation"
+  },
+  "state": "established"
+}

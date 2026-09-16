@@ -1,0 +1,112 @@
+COMMAND   PUBLIC_VERSION_RECORD_URL=http://127.0.0.1:50719/ PVR_CONTROL_URL=http://127.0.0.1:50719/definitely-not-here PVR_ESTABLISHED=2026-09-16 PVR_EXPECTED_CURRENT=v3 PVR_LINEAGE=v1,v1.1,v2,v3 PVR_SNAPSHOT=<run>/pvr_snapshot.json \
+          python3 run_acceptance.py
+CWD       vendor/acceptance_suite
+EXIT      1
+------------------------------------------------------------------------------
+==============================================================================
+FIXTURE RUN  ·  a check is credited only if it passes the golden
+               record and fails every matched known-bad state
+==============================================================================
+
+1 resolves
+    golden                                    PASS
+    dead url                                  correctly rejected  (HTTP 404)
+
+2 current version
+    golden                                    PASS  v3
+    no version marked current                 correctly rejected  (no version marked current)
+    wrong current version                     correctly rejected  (current is v1.1, expected v3)
+
+3 prior versions
+    golden                                    PASS  4 versions
+    current version only                      correctly rejected  (absent: v1, v1.1, v2)
+    empty record                              correctly rejected  (absent: v1, v1.1, v2, v3)
+
+4 amendment reasons
+    golden                                    PASS
+    missing amendment reason                  correctly rejected  (no reason: v2)
+    empty record                              correctly rejected  (no entries; nothing to test)
+
+5 version semantics
+    golden                                    PASS
+    flat list, no revision class              correctly rejected  (class not declared: v1, v1.1, v2, v3)
+    empty record                              correctly rejected  (no entries; nothing to test)
+
+6 supersession
+    golden                                    PASS
+    version silently dropped                  correctly rejected  (not marked superseded: v2)
+    empty record                              correctly rejected  (no entries; nothing to test)
+
+7 unauthenticated
+    golden                                    PASS
+    authentication required                   correctly rejected  (authentication required)
+
+8 no silent revision
+    golden                                    PASS
+    overwritten, no prior version retained    correctly rejected  (no prior state retained; prior entries can be replaced in place)
+    history present but bytes replaceable     correctly rejected  (prior entries can be replaced in place)
+    history present but changes undated       correctly rejected  (changes not dated)
+
+9 date consistency
+    golden                                    PASS  4 entries
+    missing publication date                  correctly rejected  (absent: v2.published_to_record)
+    backfilled to July                        correctly rejected  (before the record existed: v2 claims 2026-07-29; v3 claims 2026-07-29)
+    publication date is not a date            correctly rejected  (not an ISO date: v2.published_to_record='not-a-date')
+    instrument date is not ISO                correctly rejected  (not an ISO date: v2.instrument_date='29/07/2026')
+    published before the instrument is dated  correctly rejected  (before the record existed: v2 claims 2026-07-01)
+    empty record                              correctly rejected  (no entries; nothing to test)
+
+10 entries retrievable
+    golden                                    PASS  4 entries
+    archive entry gone, index unchanged       correctly rejected  (does not resolve: v2)
+    entries never fetched                     correctly rejected  (not fetched: v1, v1.1, v2, v3)
+    empty record                              correctly rejected  (no entries)
+
+11 entry digests match
+    golden                                    PASS  4 entries
+    entry resolves but serves other bytes     correctly rejected  (digest mismatch: v2)
+    entries never fetched                     correctly rejected  (nothing retrieved to compare)
+    empty record                              correctly rejected  (nothing retrieved to compare)
+
+12 membership retained
+    golden                                    PASS  4 versions still listed
+    no accepted baseline                      correctly rejected  (no prior inventory; removal cannot be detected on a first observation)
+    version removed, outside configured lineagecorrectly rejected  (present at baseline, absent now: v0)
+
+------------------------------------------------------------------------------
+CREDITED   12/12
+    1 resolves
+    2 current version
+    3 prior versions
+    4 amendment reasons
+    5 version semantics
+    6 supersession
+    7 unauthenticated
+    8 no silent revision
+    9 date consistency
+    10 entries retrievable
+    11 entry digests match
+    12 membership retained
+------------------------------------------------------------------------------
+
+==============================================================================
+LIVE RUN
+==============================================================================
+  target   http://127.0.0.1:50719/
+  spec     lineage=v1,v1.1,v2,v3  current=v3  record established 2026-09-16
+  control  http://127.0.0.1:50719/definitely-not-here
+
+  PASS  1 resolves
+  PASS  2 current version  v3
+  PASS  3 prior versions  4 versions
+  PASS  4 amendment reasons
+  PASS  5 version semantics
+  PASS  6 supersession
+  PASS  7 unauthenticated
+  PASS  8 no silent revision
+  PASS  9 date consistency  4 entries
+  FAIL  10 entries retrievable  does not resolve: v1.1
+  PASS  11 entry digests match  3 entries
+  PASS  12 membership retained  4 versions still listed
+
+  baseline  baseline HELD: observation was not clean
