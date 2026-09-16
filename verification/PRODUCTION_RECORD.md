@@ -31,7 +31,7 @@ What that does **not** establish is unchanged by publication, and is set out in 
 |---|---|---|
 | `release-001` (tag on the frozen-release commit) | These are the bytes intended for publication | Nothing about whether they were deployed or observed |
 | The live verification evidence | These bytes were observed at the canonical venue, matching this manifest object by object | Nothing about the Charter, and nothing about continuity beyond the moment of observation |
-| The publication-evidence tag, recorded once it exists | The evidence record **that** publication occurred | **It is not the published object.** It necessarily post-dates the deployment it records, and must not be read as the released set |
+| `publication-001` (tag on the publication-evidence commit) | The evidence record **that** publication occurred | **It is not the published object.** It necessarily post-dates the deployment it records, and must not be read as the released set |
 
 The recorder enforces the join between the first two: a release is bound to its commit and tag
 before deployment, and publication cannot be recorded unless the approval evidence carries this

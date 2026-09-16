@@ -8,7 +8,10 @@
       "recorded_at": "2026-09-16T16:51:28.097252+00:00",
       "snapshot": "publications/1/",
       "deploy_id": "6aaac22b28ce9dc7b8ecf61d",
-      "release_commit": "89f6e53c65ae8405ed050ab92a9625206a6a819b"
+      "release_commit": "89f6e53c65ae8405ed050ab92a9625206a6a819b",
+      "publication_evidence_tag": "publication-001",
+      "publication_evidence_commit": "144530d0f8a4d902097fbc61995f65a6223ce905",
+      "evidence_tag_recorded_at": "2026-09-16T17:31:58.565466+00:00"
     }
   }
 }
