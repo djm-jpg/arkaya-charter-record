@@ -47,6 +47,27 @@ verify that the commit exists in any repository. B8, a fresh clone at the tag re
 what tests the other half. At B8 the clone's resolved commit equalled the recorded commit and
 the clone's `publish/charter/manifest.json` equalled the frozen manifest.
 
+## 2A. Commits, tags and packages
+
+| Identifier | Value | Recorded |
+|---|---|---|
+| `release-001` | `89f6e53c65ae8405ed050ab92a9625206a6a819b` — frozen-release commit | 2026-09-16 |
+| `publication-001` | `144530d0f8a4d902097fbc61995f65a6223ce905` — publication-evidence commit | 2026-09-16 |
+| `evidence-002` | `0f724449803822dd99c03d0b4dd94a11614a6910` — baseline and publication log | 2026-09-16 |
+| PACKAGE_1 | `7e85a5a57bc4e0f14d8368e3566b8ddbbc4d150a09f3ca748eefa50805724fb1` — pre-publication, the set that was deployed | 2026-09-16 |
+| PACKAGE_2 | `0dcde8e8a48f0e2712630ccede98a654e2f4158a99a62b96438637abd745d22d` — after recording and after the gate fixture correction | 2026-09-16 |
+| PACKAGE_3 | `8a1dcb44ffb87fe878868885a4ea78d1025553970c7fb699b7afc73a9c077b90` — with the completed publication log | 2026-09-16 |
+| PACKAGE_4 | `4fb851841a1d5211a6dda8cf53feda232c5af9746a1c262502aac34675e7bff2` — the closing package, 1,138,840 bytes | 2026-09-16 |
+
+All three tags are annotated and unsigned.
+
+**The closing boundary.** The PACKAGE_4 archive was built before this line was written, so the
+copy of this log inside that archive does not name PACKAGE_4. It cannot: writing a package's
+own digest into a file inside it changes the file, and so changes the digest. The regress is
+cut here rather than hidden. The authoritative copy of this log is the one filed alongside the
+archive and committed at `evidence-003`; its own SHA-256 is recorded in an external
+`.sha256` sidecar and in the closing note, both of which sit outside the archive.
+
 ## 3. Deployment
 
 | Field | Value | Step |
@@ -143,12 +164,21 @@ All ten captured. The v3 capture was verified by opening it: nine pages, "1 capt
 | Field | Value | Step |
 |---|---|---|
 | Request submitted (date) | 2026-09-16, origin type `git`, origin https://github.com/djm-jpg/arkaya-charter-record | G4 |
-| Request status | **accepted** — "will be processed as soon as possible" | G5 |
-| Completed SWHID (snapshot or revision) | **outstanding** | G6 |
-| If outstanding: date to check again | 2026-09-17, with the next-day comparison | G7 |
+| Request status | accepted, then **completed**. Visit recorded 2026-09-16 17:56:42 UTC, visit type `git` | G5 |
+| Completed SWHID, snapshot | `swh:1:snp:3197c3d7d2c8bb9bcc36296a1d84eda72039f074` | G6 |
+| Completed SWHID, revision | `swh:1:rev:144530d0f8a4d902097fbc61995f65a6223ce905` | G6 |
+| Completed SWHID, directory | `swh:1:dir:925bb7fed89a483e800fa2b1e3cc7b007438191b` | G6 |
+| If outstanding: date to check again | not outstanding | G7 |
+
+**What this snapshot covers, and what it does not.** The visit at 17:56:42 UTC captured the
+repository as at `publication-001` (tip revision `144530d0…`, one branch, two releases). It
+therefore does **not** include the baseline commit `0f724449…` or the `evidence-002` tag, both of
+which were pushed about twelve minutes later. A second visit was requested at 18:15 UTC to
+capture them; its completion is recorded in the closing note, not here.
 
 **A request status of "accepted" or "pending" is not preservation.** Until a SWHID exists, the
-repository is not archived and must not be described as archived.
+repository is not archived and must not be described as archived. For the state at
+`publication-001`, a SWHID now exists and the repository is archived.
 
 ## 8. Baseline and follow-up
 
@@ -156,9 +186,19 @@ repository is not archived and must not be described as archived.
 |---|---|---|
 | Live baseline established (date, run 1) | 2026-09-16, exit 1 as required; failing checks exactly 8 (no silent revision) and 12 (membership retained), both being properties of a first observation; line read "baseline established" | H1 |
 | Baseline snapshot | `verification/live/pvr_snapshot_live.json`, SHA-256 `9c8c6a9d853ef330f6f5d3be8f1724d49f418c6191b8edd5c79ac5f242abbd83` | H1 |
-| Next-day comparison scheduled for | 2026-09-17 | H4 |
-| Next-day comparison run (date, run 2) | **outstanding** | H4 |
-| Run 2 result | **outstanding** | H4 |
+| Comparison run 2 (date and time) | 2026-09-16 18:16:32 UTC | H4 |
+| Interval between baseline and run 2 | **sixteen minutes**, not a day | H4 |
+| Run 2 result | exit 0, **twelve of twelve**, "baseline advanced". Snapshot advanced to `f654462baf34596394299bf5343e4e3f0eca5eb2cf7fb1a61f2c73e2ba1dc16c` | H4 |
+| Genuine next-day comparison (run 3) scheduled for | 2026-09-17 09:00 UTC | H4 |
+| Run 3 result | **outstanding** | H4 |
+
+**Run 2 is not what the runbook called it.** The runbook names step 180 the "next-day
+comparison". It was executed in the same session, sixteen minutes after the baseline. What it
+establishes is that the comparison mechanism works and that the record was unchanged over
+sixteen minutes. It is **not** evidence of persistence over any meaningful interval, and it must
+not be cited as such. Run 3, scheduled for the following morning, is that evidence. The
+mechanism was additionally proved before run 2 by a dry run against a copied snapshot, which
+returned twelve of twelve and left the real baseline untouched.
 
 Run 1 passed the other ten checks against the live record: resolves, current version v3, four
 prior versions, amendment reasons, version semantics, supersession, unauthenticated access,
