@@ -50,11 +50,17 @@ def make_writable(root):
 
 # Copied into every sandbox. `vendor` is included because package.py checks the
 # retained evidence paths that point into the runs, not the suite itself.
+# `records.py`, `build_release.py`, `test_namespaces.py` and `test_fixtures` were
+# added on 28 September 2026 with the namespace registry: every script now reads
+# the registry, and the full gate runs test_namespaces.py, so a sandbox without
+# them could not run the gate at all. `ledgers/` is deliberately NOT copied, for
+# the same reason the Charter ledgers are not: the recorder writes it.
 SANDBOX = ("publish", "releases", "verification", "inputs", "vendor", "publications",
            "build_publication_set.py", "record_publication.py", "package.py",
            "expectations.py", "verify_live.py", "test_build.py",
            "test_verify_live.py", "test_package.py", "README_source.md",
-           "DEPLOY.md", "PUBLICATION_LOG.md")
+           "DEPLOY.md", "PUBLICATION_LOG.md",
+           "records.py", "build_release.py", "test_namespaces.py", "test_fixtures")
 
 # Written into a release marker by `record_publication.py`: the first two by
 # `--bind`, the rest when a publication is recorded.
@@ -70,6 +76,17 @@ BASELINE_MARKER_KEYS = frozenset((
     "published", "state"))
 
 CANDIDATE_STATE = "frozen release candidate; not deployed, not published"
+
+# The same classification for a multi-namespace release marker (schema
+# arkaya-release/2, written by build_release.py). None is committed yet; once one
+# is published it will be copied into every sandbox with `releases/`, and without
+# this classification the reset would stop on its fields rather than clear them.
+MULTI_PUBLICATION_MARKER_KEYS = ("bound_at", "binding_bound", "release_commit",
+                                 "release_tag", "published_on", "publication_snapshots")
+MULTI_BASELINE_MARKER_KEYS = frozenset((
+    "schema", "release_dir", "release_date", "built_at", "canonical_root",
+    "root_pointer_sha256", "release_builder", "registry_sha256", "date_mismatch_reason",
+    "test_input", "namespaces", "published", "state"))
 
 
 def _copy_package_into(root):
@@ -145,7 +162,12 @@ def reset_publication_state(root):
         with open(path) as f:
             marker = json.load(f)
 
-        unknown = set(marker) - BASELINE_MARKER_KEYS - set(PUBLICATION_MARKER_KEYS)
+        if marker.get("schema") == "arkaya-release/2":
+            baseline_keys, publication_keys = (MULTI_BASELINE_MARKER_KEYS,
+                                               MULTI_PUBLICATION_MARKER_KEYS)
+        else:
+            baseline_keys, publication_keys = BASELINE_MARKER_KEYS, PUBLICATION_MARKER_KEYS
+        unknown = set(marker) - baseline_keys - set(publication_keys)
         if unknown:
             raise AssertionError(
                 f"{name} carries unclassified marker field(s) {sorted(unknown)}. "
@@ -153,7 +175,7 @@ def reset_publication_state(root):
                 f"or to PUBLICATION_MARKER_KEYS if recording writes it. Left "
                 f"unclassified it would leak publication state into every sandbox.")
 
-        for key in PUBLICATION_MARKER_KEYS:
+        for key in publication_keys:
             marker.pop(key, None)
         marker["published"] = False
         marker["state"] = CANDIDATE_STATE
@@ -161,7 +183,7 @@ def reset_publication_state(root):
             json.dump(marker, f, indent=2)
 
         assert marker["published"] is False, name
-        assert not [k for k in PUBLICATION_MARKER_KEYS if k in marker], name
+        assert not [k for k in publication_keys if k in marker], name
 
     # publications/ ships carrying only its own README. Recorded sequences are
     # directories beside it and must not survive into a sandbox.
