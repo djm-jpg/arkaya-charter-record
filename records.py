@@ -105,11 +105,12 @@ REQUIRED = ("charter",)
 # freeze: the builder refuses every UNREGISTERED value and every missing byte
 # count, so nothing can be built from this block as shipped.
 DISCLOSURE_REGISTRATION = {
-    "record_slug": UNREGISTERED,
-    "title": UNREGISTERED,
+    "record_slug": "conflicted-decisions",
+    "title": "Founding-period schema decisions taken in concurrent capacities",
     "entries": [
-        {"version": "v1", "src": UNREGISTERED, "sha256": UNREGISTERED, "bytes": None,
-         "document_date": UNREGISTERED, "reason": None},
+        {"version": "v3", "src": "conflicted-decisions-v3.md",
+         "sha256": "10400912d65cf1bfd584322874d7f178949d209f0157072908be872076926c64",
+         "bytes": 28593, "document_date": "2026-09-28", "reason": None},
     ],
 }
 # END DISCLOSURE REGISTRATION

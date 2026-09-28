@@ -1,0 +1,48 @@
+{
+  "schema": "arkaya-release/2",
+  "release_dir": "publish-002",
+  "release_date": "2026-09-28",
+  "built_at": "2026-09-28T20:57:45.702127+00:00",
+  "canonical_root": "https://record.arkayarisk.com/",
+  "root_pointer_sha256": "5c2a1b8c55c16183d4a94deff459617f48394346ce69254550d33ba2206dd787",
+  "release_builder": {
+    "script": "build_release.py",
+    "source_path": "build_release.py",
+    "version": "2026-09-28.1",
+    "sha256": "d973186ccf98bd63a22815cf0eaf8b36915e51caf01e44779bf3555717765f6d"
+  },
+  "registry_sha256": "99c3038c959310a0a5381eceaab447b8f5aeff85727dabfa927844016f4f1a4a",
+  "date_mismatch_reason": null,
+  "test_input": false,
+  "namespaces": {
+    "charter": {
+      "mode": "carried",
+      "path": "charter",
+      "carried_from_release": "publish",
+      "sequence": 1,
+      "canonical_uri": "https://record.arkayarisk.com/charter/",
+      "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+      "index_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+      "versions_awaiting_first_publication": []
+    },
+    "disclosures": {
+      "mode": "built",
+      "path": "disclosures",
+      "sequence": 1,
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+      "manifest_sha256": "a9775768cd21190023144af907bbb4b81cff72b74ecac0cc7238a3a93dc2af30",
+      "index_sha256": "6a2ff399d0351393bd438a2cec49d3311b87149293c02e013e4b1b14a7b7728a",
+      "builder": {
+        "script": "build_release.py",
+        "source_path": "build_release.py",
+        "version": "2026-09-28.1",
+        "sha256": "d973186ccf98bd63a22815cf0eaf8b36915e51caf01e44779bf3555717765f6d"
+      },
+      "versions_awaiting_first_publication": [
+        "v3"
+      ]
+    }
+  },
+  "published": false,
+  "state": "frozen release candidate; not deployed, not published"
+}
