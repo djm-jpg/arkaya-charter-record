@@ -1,0 +1,77 @@
+{
+  "schema": "arkaya-disclosure-manifest/1",
+  "record": "Founding-period schema decisions taken in concurrent capacities",
+  "namespace": "disclosures",
+  "as_of": "2026-09-28",
+  "sequence": 1,
+  "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+  "provenance_claim": "The manifest records the release builder and its digest, the namespace registry and its digest, the registered inputs with their digests, and the build parameters. Matching digests identify the supplied builder and registry and show that the shipped objects stand in the expected relationship to the registered inputs. They do not independently prove that this builder historically executed.",
+  "builder": {
+    "script": "build_release.py",
+    "source_path": "build_release.py",
+    "version": "2026-09-28.1",
+    "sha256": "d973186ccf98bd63a22815cf0eaf8b36915e51caf01e44779bf3555717765f6d"
+  },
+  "registry": {
+    "path": "records.py",
+    "sha256": "99c3038c959310a0a5381eceaab447b8f5aeff85727dabfa927844016f4f1a4a"
+  },
+  "build_parameters": {
+    "built_at": "2026-09-28T20:57:45.702127+00:00",
+    "python": "3.11.15",
+    "platform": "Linux-6.18.44-fc-v37-x86_64-with-glibc2.39",
+    "PVR_RELEASE_DATE": "2026-09-28",
+    "sequence": 1,
+    "date_mismatch_reason": null,
+    "test_input": false
+  },
+  "inputs": [
+    {
+      "path": "inputs/disclosures/conflicted-decisions-v3.md",
+      "sha256": "10400912d65cf1bfd584322874d7f178949d209f0157072908be872076926c64",
+      "bytes": 28593,
+      "version": "v3"
+    }
+  ],
+  "generated": [
+    {
+      "path": "index.html",
+      "generated_from": "index.json",
+      "source_sha256": "6a2ff399d0351393bd438a2cec49d3311b87149293c02e013e4b1b14a7b7728a",
+      "sha256": "156853de8680fa8d8e9481773205f544a81c61c650931b1cdce20584dcca6c40",
+      "relation": "rendered by builder"
+    }
+  ],
+  "not_bit_reproducible": {
+    "paths": [
+      "manifest.json",
+      "manifest.json.sha256"
+    ],
+    "reason": "the manifest carries built_at and the platform; its sidecar digests the manifest"
+  },
+  "objects": [
+    {
+      "path": "conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "mime_type": "text/markdown",
+      "bytes": 28593,
+      "sha256": "10400912d65cf1bfd584322874d7f178949d209f0157072908be872076926c64",
+      "version": "v3",
+      "status": "current"
+    },
+    {
+      "path": "index.json",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/index.json",
+      "mime_type": "application/json",
+      "bytes": 2430,
+      "sha256": "6a2ff399d0351393bd438a2cec49d3311b87149293c02e013e4b1b14a7b7728a"
+    },
+    {
+      "path": "index.html",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/index.html",
+      "mime_type": "text/html",
+      "bytes": 4549,
+      "sha256": "156853de8680fa8d8e9481773205f544a81c61c650931b1cdce20584dcca6c40"
+    }
+  ]
+}

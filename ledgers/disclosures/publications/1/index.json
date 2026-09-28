@@ -1,0 +1,34 @@
+{
+  "schema": "arkaya-disclosure-record/1",
+  "record": "Founding-period schema decisions taken in concurrent capacities",
+  "record_slug": "conflicted-decisions",
+  "namespace": "disclosures",
+  "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+  "as_of": "2026-09-28",
+  "as_of_caveat": "as_of states the position asserted by this issue of the disclosure record on that date. It does not warrant the absence of later disclosures that have not yet been published to this record.",
+  "sequence": 1,
+  "retention": "Each published disclosure, publication index and associated integrity record is retained permanently as part of Arkaya's governance record. Recipients may retain independent copies for evidential and verification purposes.",
+  "not_asserted": "Publication records the documentary state of each disclosure and its publication metadata. It does not validate the substance of any disclosure, and it does not establish that any control described in a disclosure operated as described.",
+  "definitions": {
+    "document_date": "The date printed on that issue of the disclosure. A documentary fact about the document, not a finding about the period it describes.",
+    "published_to_record": "The date that issue was released to this disclosure record at its canonical address. No earlier publication date is asserted. Evidence that the record was reachable at the canonical address on that date, and matched this manifest, is retained in this record's own publication ledger. This field is not itself that evidence.",
+    "sequence": "The revision number of this disclosure record's index. It is this record's own counter, advances by one whenever an index differing in any published field is made current, and is never reused for different content."
+  },
+  "entries": [
+    {
+      "version": "v3",
+      "document_date": "2026-09-28",
+      "published_to_record": "2026-09-28",
+      "reason": null,
+      "predecessor": null,
+      "is_current": true,
+      "status": "current",
+      "entry_url": "conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "mime_type": "text/markdown",
+      "content_digest": "sha256:10400912d65cf1bfd584322874d7f178949d209f0157072908be872076926c64",
+      "bytes": 28593,
+      "source": "inputs/disclosures/conflicted-decisions-v3.md"
+    }
+  ]
+}

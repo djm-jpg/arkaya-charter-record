@@ -1,0 +1,15 @@
+{
+  "note": "Every disclosures index made current, with its immutable snapshot under ledgers/disclosures/publications/. This is the disclosures record's own ledger.",
+  "versions": {
+    "1": {
+      "index_sha256": "6a2ff399d0351393bd438a2cec49d3311b87149293c02e013e4b1b14a7b7728a",
+      "manifest_sha256": "a9775768cd21190023144af907bbb4b81cff72b74ecac0cc7238a3a93dc2af30",
+      "made_current_on": "2026-09-28",
+      "recorded_at": "2026-09-28T21:32:41.263702+00:00",
+      "snapshot": "ledgers/disclosures/publications/1/",
+      "release": "publish-002",
+      "deploy_id": "6abad9e1000fbe6e7d4aa921",
+      "release_commit": "ce30c9dc4cc2896ee4f2e56fe465de7685993425"
+    }
+  }
+}

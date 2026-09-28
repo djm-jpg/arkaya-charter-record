@@ -1,0 +1,11 @@
+{
+  "note": "First publication date per disclosures version, recorded only by record_publication.py against live evidence. This is the disclosures record's own ledger.",
+  "versions": {
+    "v3": {
+      "first_published": "2026-09-28",
+      "sequence": 1,
+      "recorded_at": "2026-09-28T21:32:41.263702+00:00",
+      "evidence": "ledgers/disclosures/publications/1/live_verification.json"
+    }
+  }
+}
