@@ -84,6 +84,14 @@ def validate_dependencies():
         for needed in ("run_acceptance.py", "checks.py", "live.py", "model.py", "fixtures.py"):
             if not os.path.isfile(os.path.join(SUITE, needed)):
                 problems.append(f"acceptance suite is incomplete: {needed} missing")
+    if os.path.isfile(RELEASE_META):
+        with open(RELEASE_META) as f:
+            if json.load(f).get("schema") == "arkaya-release/2":
+                raise VerificationError(
+                    f"{RELEASE_NAME} carries more than one record. Its Charter is carried "
+                    f"byte-identical from the published release, so the Charter runs already "
+                    f"retained for that manifest apply to it, and package.py re-derives them. "
+                    f"This harness runs the acceptance suite against a single Charter release")
     if not os.path.isfile(os.path.join(RECORD, "manifest.json")):
         problems.append(f"no built release at {RELEASE_NAME}/charter/manifest.json")
     if not os.path.isfile(RELEASE_META):

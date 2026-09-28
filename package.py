@@ -25,6 +25,29 @@ The gate, in order:
        expected outcome, and the rebuild comparison passed
     4. the production record equals its deterministic regeneration
     5. the build tests and the live-verifier known-bad tests pass
+
+Since 28 September 2026 the Charter's identity is part of step 1 for every
+release: `charter/` must be byte for byte the published Charter, against the
+digest registered in `records.py`, or the release is refused (CHARTER_IDENTITY).
+
+MULTIPLE RECORDS. A release built by `build_release.py` (freeze marker schema
+`arkaya-release/2`) is gated per namespace:
+
+    PVR_RELEASE=<release name> python3 package.py [--check]
+
+    1. the registry describes a valid release, the deploy root holds exactly
+       the pointer and one directory per registered namespace, and the
+       pointer is the frozen one and links every record
+    2. the Charter is present and is the published Charter, byte for byte;
+       a release missing it, or carrying an altered one, is refused
+    3. every built namespace is frozen, matches its own manifest with nothing
+       unnamed, agrees with its freeze-marker entry, and its builder, registry
+       and registered inputs are the shipped files
+    4. the Charter's acceptance-suite evidence and rebuild comparison are
+       re-derived exactly as for a single-record release; they apply because
+       the carried Charter is the manifest they were taken against
+    5. the release record equals its deterministic regeneration
+    6. the four test suites pass
 """
 
 import hashlib
@@ -39,6 +62,7 @@ sys.path.insert(0, HERE)
 
 from expectations import (EXPECTED, REQUIRED_RUNS, evaluate_run,   # noqa: E402
                           evaluate_rebuild, parse_transcript, tree, Unreadable)
+import records  # noqa: E402
 RUNS = os.path.join(HERE, "verification", "runs")
 PRODUCTION_RECORD = os.path.join(HERE, "verification", "PRODUCTION_RECORD.md")
 
@@ -60,6 +84,10 @@ CONTENTS = (
     "publications",               # immutable snapshot per published sequence
     "releases",                   # freeze markers
     "build_publication_set.py",
+    "build_release.py",           # the multi-namespace release builder
+    "records.py",                 # the namespace registry
+    "ledgers",                    # each built namespace's own ledgers and snapshots
+    "test_fixtures",              # synthetic TEST INPUTS, never registered here
     "record_publication.py",
     "expectations.py",
     "package.py",
@@ -67,6 +95,7 @@ CONTENTS = (
     "test_build.py",
     "test_verify_live.py",
     "test_package.py",
+    "test_namespaces.py",
     "README_source.md",
     "DEPLOY.md",
     "PUBLICATION_LOG.md",
@@ -104,10 +133,10 @@ def check_release_frozen(manifest_sha):
     return meta, problems
 
 
-def check_manifest_against_disk(manifest):
+def check_manifest_against_disk(manifest, record=RECORD):
     problems = []
     for o in manifest["objects"]:
-        p = os.path.join(RECORD, o["path"])
+        p = os.path.join(record, o["path"])
         if not os.path.isfile(p):
             problems.append(f"{o['path']}: named in the manifest, not on disk")
             continue
@@ -118,15 +147,19 @@ def check_manifest_against_disk(manifest):
 
     named = {o["path"] for o in manifest["objects"]} | {"manifest.json", "manifest.json.sha256"}
     on_disk = set()
-    for dirpath, _, names in os.walk(RECORD):
+    for dirpath, _, names in os.walk(record):
         for n in names:
-            on_disk.add(os.path.relpath(os.path.join(dirpath, n), RECORD))
+            on_disk.add(os.path.relpath(os.path.join(dirpath, n), record))
     for extra in sorted(on_disk - named):
         problems.append(f"{extra}: served but not named in the manifest")
 
-    with open(os.path.join(RECORD, "manifest.json.sha256")) as f:
-        recorded = f.read().split()[0]
-    if recorded != sha(os.path.join(RECORD, "manifest.json")):
+    sidecar = os.path.join(record, "manifest.json.sha256")
+    if not os.path.isfile(sidecar):
+        problems.append("manifest.json.sha256 is missing")
+        return problems
+    with open(sidecar) as f:
+        parts = f.read().split()
+    if not parts or parts[0] != sha(os.path.join(record, "manifest.json")):
         problems.append("manifest.json.sha256 does not match manifest.json")
     return problems
 
@@ -237,7 +270,7 @@ def check_marker_agrees_with_manifest(manifest, release):
     return problems
 
 
-def check_results(manifest, results):
+def check_results(manifest, results, record=RECORD):
     """Re-derive every outcome from the retained evidence. DM's finding 2.
 
     The previous version read `as_expected`, `all_runs_as_expected` and
@@ -328,7 +361,7 @@ def check_results(manifest, results):
         with open(comparison_path) as f:
             comparison = json.load(f)
         rebuild_problems, recomputed = evaluate_rebuild(
-            comparison, manifest["not_bit_reproducible"]["paths"], tree(RECORD))
+            comparison, manifest["not_bit_reproducible"]["paths"], tree(record))
         problems += rebuild_problems
         claimed = results.get("rebuild", {}).get("passed")
         if claimed is not None and bool(claimed) != recomputed:
@@ -372,7 +405,7 @@ def derive_outcomes(results):
     return derived
 
 
-def derive_rebuild(manifest, results):
+def derive_rebuild(manifest, results, record=RECORD):
     """Recompute the rebuild verdict from the retained trees."""
     path = os.path.join(HERE, results["run_dir"],
                         results.get("rebuild_comparison", "run06_rebuild.json"))
@@ -381,7 +414,7 @@ def derive_rebuild(manifest, results):
     before, after = comparison.get("before") or {}, comparison.get("after") or {}
     expected_change = set(manifest["not_bit_reproducible"]["paths"])
     changed = {p for p in before if before[p] != after.get(p)}
-    _, passed = evaluate_rebuild(comparison, expected_change, tree(RECORD))
+    _, passed = evaluate_rebuild(comparison, expected_change, tree(record))
     return {
         "objects_compared": len(before),
         "pdfs_compared": sorted(p for p in before if p.endswith(".pdf")),
@@ -697,9 +730,309 @@ record. "v5" in the package name is the package revision, not a Charter version.
 """
 
 
+# ------------------------------------------------------- multiple records
+
+RELEASE_RECORD = os.path.join(HERE, "verification", f"RELEASE_RECORD_{RELEASE_NAME}.md")
+
+
+def check_multi_release(meta):
+    """Steps 1 to 3 of the multi-namespace gate. Returns (problems, {name: manifest}).
+
+    Every refusal carries its stage, so the reader knows which guarantee failed.
+    """
+    problems = [f"[REGISTRY] {p}" for p in records.registry_problems()]
+    marker_ns = meta.get("namespaces") or {}
+    registered = [ns["name"] for ns in records.NAMESPACES]
+    if sorted(marker_ns) != sorted(registered):
+        problems.append(f"[NAMESPACES] the freeze marker names {sorted(marker_ns)}, the "
+                        f"registry {sorted(registered)}")
+    for required in records.REQUIRED:
+        if required not in marker_ns:
+            problems.append(f"[CHARTER_CARRY] the release does not carry the {required} "
+                            f"namespace. No release may omit the carried Charter")
+    if not os.path.isdir(RELEASE_DIR):
+        return problems + [f"[RELEASE_DIR] {RELEASE_NAME}/ not found"], {}
+
+    # 1. The deploy root: exactly the pointer and one directory per record.
+    membership = set(os.listdir(RELEASE_DIR))
+    expected = {"index.html"} | {ns["path"] for ns in records.NAMESPACES}
+    if membership != expected:
+        problems.append(f"[LAYOUT] the deploy root holds {sorted(membership)}, expected "
+                        f"{sorted(expected)}. Anything in it is served")
+    pointer = os.path.join(RELEASE_DIR, "index.html")
+    if not os.path.isfile(pointer):
+        problems.append("[POINTER] the deploy root pointer page is missing")
+    else:
+        if sha(pointer) != meta.get("root_pointer_sha256"):
+            problems.append("[POINTER] the deploy root page does not match its freeze marker")
+        with open(pointer) as f:
+            body = f.read()
+        for ns in records.NAMESPACES:
+            if f'href="/{ns["path"]}/"' not in body:
+                problems.append(f"[POINTER] the deploy root page does not link /{ns['path']}/")
+
+    # 2. The Charter: present, and the published Charter byte for byte.
+    manifests = {}
+    c = records.CHARTER
+    c_record = os.path.join(RELEASE_DIR, c["path"])
+    ident = records.charter_record_problems(c_record)
+    problems += [f"[CHARTER_IDENTITY] {p}" for p in ident]
+    cm = marker_ns.get("charter") or {}
+    if (cm.get("mode") != "carried" or cm.get("sequence") != c["published_sequence"]
+            or cm.get("manifest_sha256") != c["published_manifest_sha256"]):
+        problems.append("[CHARTER_IDENTITY] the freeze marker does not record the Charter as "
+                        "carried at its published sequence and manifest")
+    if not ident:
+        manifests["charter"] = load(os.path.join(c_record, "manifest.json"), "Charter manifest")
+
+    # 3. Every built namespace against its own manifest, marker and sources.
+    for ns in records.NAMESPACES:
+        if ns["mode"] != "built":
+            continue
+        where = f"{ns['path']}/"
+        m = marker_ns.get(ns["name"])
+        record = os.path.join(RELEASE_DIR, ns["path"])
+        manifest_path = os.path.join(record, "manifest.json")
+        if not m or not os.path.isfile(manifest_path):
+            problems.append(f"[{ns['name'].upper()}] {where}manifest.json or its freeze-marker "
+                            f"entry is missing")
+            continue
+        manifest = load(manifest_path, f"{ns['name']} manifest")
+        manifests[ns["name"]] = manifest
+        got = sha(manifest_path)
+        if got != m.get("manifest_sha256"):
+            problems.append(f"[FROZEN] {where}the release directory does not match its freeze "
+                            f"marker ({got[:16]}… vs {str(m.get('manifest_sha256'))[:16]}…)")
+        problems += [f"{where}{p}" for p in check_manifest_against_disk(manifest, record)]
+        if m.get("builder") != manifest.get("builder"):
+            problems.append(f"{where}the freeze marker's builder block differs from the manifest's")
+        if m.get("sequence") != manifest.get("sequence"):
+            problems.append(f"{where}the freeze marker's sequence differs from the manifest's")
+        if meta.get("release_date") != manifest.get("as_of"):
+            problems.append(f"{where}the freeze marker's release date differs from the "
+                            f"manifest's as_of")
+        if manifest.get("canonical_uri") != ns["canonical_uri"]:
+            problems.append(f"{where}the manifest's canonical URI is not the registered one")
+        index = os.path.join(record, "index.json")
+        if os.path.isfile(index) and sha(index) != m.get("index_sha256"):
+            problems.append(f"{where}the freeze marker's index digest does not match index.json")
+        for g in manifest.get("generated", []):
+            if os.path.isfile(index) and g.get("generated_from") == "index.json" \
+                    and g.get("source_sha256") != sha(index):
+                problems.append(f"{where}{g['path']} was not generated from this index.json")
+
+        # The shipped builder, registry and inputs must be the recorded ones.
+        builder = os.path.join(HERE, os.path.basename(manifest["builder"]["source_path"]))
+        if not os.path.isfile(builder):
+            problems.append(f"{where}the builder named by the manifest is not in the package")
+        elif sha(builder) != manifest["builder"]["sha256"]:
+            problems.append(f"{where}the shipped builder hashes to {sha(builder)[:16]}…, the "
+                            f"manifest records {manifest['builder']['sha256'][:16]}…. Rebuild "
+                            f"and refreeze")
+        registry = os.path.join(HERE, manifest.get("registry", {}).get("path", "records.py"))
+        if sha(registry) != manifest.get("registry", {}).get("sha256") \
+                or sha(registry) != meta.get("registry_sha256"):
+            problems.append(f"{where}the shipped registry records.py hashes to "
+                            f"{sha(registry)[:16]}…, not the registry this release was built "
+                            f"from. Rebuild and refreeze")
+        reg_problems = records.registration_problems()
+        if reg_problems:
+            problems.append(f"[REGISTRY] the disclosure carrier is not registered: "
+                            f"{'; '.join(reg_problems)}")
+        else:
+            registered_inputs = sorted(
+                (f"{ns['inputs']}/{e['src']}", e["sha256"], e["bytes"])
+                for e in records.DISCLOSURE_REGISTRATION["entries"])
+            recorded_inputs = sorted((i["path"], i["sha256"], i["bytes"])
+                                     for i in manifest.get("inputs", []))
+            if registered_inputs != recorded_inputs:
+                problems.append(f"{where}the manifest's inputs are not the registered inputs")
+        for i in manifest.get("inputs", []):
+            p = os.path.join(HERE, i["path"])
+            if not os.path.isfile(p):
+                problems.append(f"{where}input not in the package: {i['path']}")
+            elif sha(p) != i["sha256"]:
+                problems.append(f"{where}{i['path']}: shipped {sha(p)[:16]}… manifest "
+                                f"{i['sha256'][:16]}…")
+            elif os.path.getsize(p) != i["bytes"]:
+                problems.append(f"{where}{i['path']}: shipped {os.path.getsize(p)} bytes, "
+                                f"manifest {i['bytes']}")
+    return problems, manifests
+
+
+def generate_release_record(meta, manifests, results):
+    """Deterministic: the same release and evidence produce the same bytes.
+
+    Nothing here reads the clock, so `--check` regenerates it and compares byte
+    for byte, as for the Charter's production record.
+    """
+    c = records.CHARTER
+    derived = derive_outcomes(results)
+    rebuild = derive_rebuild(manifests["charter"], results,
+                             os.path.join(RELEASE_DIR, c["path"]))
+    runs_ok = sum(1 for d in derived.values() if d and d["as_expected"])
+    published = bool(meta.get("published"))
+    status = (f"**Status: published on {meta.get('published_on')}.** Recorded from a passing, "
+              f"approved live verification of every namespace at the canonical address."
+              if published else
+              f"**Status as at {meta['release_date']}: frozen release candidate. Not deployed, "
+              f"not published.**")
+    if meta.get("test_input"):
+        status += ("\n\n**TEST INPUT RELEASE.** Built from a synthetic test input. It is never "
+                   "granted production approval and is never published.")
+
+    ns_rows = "\n".join(
+        f"| `{name}` | {d['mode']} | {d['sequence']} | `{d['manifest_sha256']}` | "
+        f"`{d['index_sha256']}` | {', '.join(d['versions_awaiting_first_publication']) or 'none'} |"
+        for name, d in sorted(meta["namespaces"].items()))
+    sections = []
+    for ns in records.NAMESPACES:
+        if ns["mode"] != "built" or ns["name"] not in manifests:
+            continue
+        m = manifests[ns["name"]]
+        objects = "\n".join(f"| `{o['path']}` | {o['mime_type']} | `{o['sha256']}` | "
+                             f"{o['bytes']:,} |" for o in m["objects"])
+        inputs = "\n".join(f"| {i['version']} | `{i['path']}` | `{i['sha256']}` | {i['bytes']:,} |"
+                            for i in m["inputs"])
+        sections.append(f"""### `/{ns['path']}/`, built
+
+Canonical URI `{m['canonical_uri']}`. Sequence {m['sequence']}, as of {m['as_of']}. Builder
+`{m['builder']['source_path']}` {m['builder']['version']}, SHA-256 `{m['builder']['sha256']}`.
+Registry `{m['registry']['path']}`, SHA-256 `{m['registry']['sha256']}`.
+
+| Version | Registered input | SHA-256 | Bytes |
+|---|---|---|---|
+{inputs}
+
+| Path | Type | SHA-256 | Bytes |
+|---|---|---|---|
+{objects}
+
+Ledgers: `{ns['first_publication_ledger']}`, `{ns['index_ledger']}`. Snapshots:
+`{ns['snapshots']}/<sequence>/`.""")
+
+    return f"""# Multi-namespace release record: `{meta['release_dir']}`
+
+Internal record. Generated by `package.py` from the freeze marker, the manifests and the
+retained Charter evidence, with no reference to the clock. Packaging regenerates it and compares
+byte for byte.
+
+{status}
+
+## 1. The release
+
+| | |
+|---|---|
+| Release directory | `{meta['release_dir']}/` |
+| Release date | {meta['release_date']} |
+| Canonical root | `{meta['canonical_root']}` |
+| Root pointer SHA-256 | `{meta['root_pointer_sha256']}` |
+| Release builder | `{meta['release_builder']['source_path']}` {meta['release_builder']['version']} `{meta['release_builder']['sha256']}` |
+| Registry SHA-256 | `{meta['registry_sha256']}` |
+| Published | {str(published).lower()} |
+
+| Namespace | Mode | Sequence | Manifest SHA-256 | Index SHA-256 | Awaiting first publication |
+|---|---|---|---|---|---|
+{ns_rows}
+
+The pointer page at the deploy root links every record and is part of none.
+
+## 2. The Charter, carried
+
+`/{c['path']}/` is carried byte-identical from `{c['carried_from_release']}/{c['path']}/`. Its manifest
+hashes to `{c['published_manifest_sha256']}`, the published manifest of sequence
+{c['published_sequence']} registered in `records.py`, and every object matches it with nothing
+else present. It was not rebuilt: its index, its sequence and its first-publication dates are
+the published ones, and publishing this release writes no Charter ledger.
+
+The Charter's acceptance-suite evidence applies because the carried Charter is the manifest it
+was taken against: `{results['run_dir']}/`, {runs_ok} of {len(derived)} runs re-derived from
+their transcripts as expected, rebuild comparison recomputed from the retained trees
+({rebuild['objects_compared']} objects, unexpected changes:
+{', '.join(rebuild['unexpected_changes']) or 'none'}, passed: {str(rebuild['passed']).lower()}).
+
+## 3. The other records
+
+{chr(10).join(sections)}
+
+## 4. What this record does not establish
+
+It records that the frozen release is internally consistent, that its Charter is the published
+Charter, and that each built record matches its registered inputs. It says nothing about the
+canonical venue: that is `verify_live.py`, and only an approved run of it can record
+publication. It does not validate the substance of any record.
+"""
+
+
+def main_multi(argv, meta):
+    """The gate for a release carrying more than one record."""
+    check_only = "--check" in argv
+    problems, manifests = check_multi_release(meta)
+    if problems:
+        print("PACKAGE REFUSED. The multi-namespace release cannot be packaged:")
+        for p in problems:
+            print(f"  - {p}")
+        return 2
+    print(f"  release        {RELEASE_NAME}, frozen, {len(manifests)} namespaces, dated "
+          f"{meta['release_date']}")
+    print(f"  charter        carried, published manifest "
+          f"{records.CHARTER['published_manifest_sha256'][:16]}…, byte-identical")
+    for ns in records.NAMESPACES:
+        if ns["mode"] == "built":
+            d = meta["namespaces"][ns["name"]]
+            print(f"  {ns['name']:<14} built, sequence {d['sequence']}, manifest "
+                  f"{d['manifest_sha256'][:16]}…, builder, registry and inputs match")
+    if meta.get("test_input"):
+        print("  TEST INPUT     this release was built from a synthetic test input and can "
+              "never be published")
+
+    c_record = os.path.join(RELEASE_DIR, records.CHARTER["path"])
+    results = find_results(records.CHARTER["published_manifest_sha256"])
+    problems = (check_source_identities(manifests["charter"], results)
+                + check_results(manifests["charter"], results, c_record))
+    if problems:
+        print("PACKAGE REFUSED. The verification evidence does not support the carried Charter:")
+        for p in problems:
+            print(f"  - {p}")
+        return 2
+    print(f"  verification   Charter: {len(results['runs'])} runs re-derived from transcripts, "
+          f"rebuild recomputed  ({results['run_dir']})")
+
+    regenerated = generate_release_record(meta, manifests, results)
+    if not check_only:
+        with open(RELEASE_RECORD, "w") as f:
+            f.write(regenerated)
+        print("  record         generated")
+    if not os.path.isfile(RELEASE_RECORD):
+        print(f"PACKAGE REFUSED: the release record has not been generated: "
+              f"{os.path.relpath(RELEASE_RECORD, HERE)}")
+        return 2
+    with open(RELEASE_RECORD) as f:
+        if f.read() != regenerated:
+            print("PACKAGE REFUSED. The release record is not its deterministic regeneration.")
+            return 2
+    print("  record check   matches its deterministic regeneration")
+
+    if run_test_suites() != 0:
+        return 2
+    if check_only:
+        return 0
+    contents = list(CONTENTS)
+    carried_from = records.CHARTER["carried_from_release"]
+    if carried_from not in contents:
+        contents.append(carried_from)
+    write_package(f"OPS_Record_Release_{RELEASE_NAME}_{meta['release_date']}", contents)
+    return 0
+
+
 # ------------------------------------------------------------------- driver
 
 def main(argv):
+    if os.path.isfile(RELEASE_META):
+        with open(RELEASE_META) as f:
+            marker = json.load(f)
+        if marker.get("schema") == "arkaya-release/2":
+            return main_multi(argv, marker)
     check_only = "--check" in argv
 
     manifest = load(os.path.join(RECORD, "manifest.json"), "manifest")
@@ -707,6 +1040,10 @@ def main(argv):
     release, problems = check_release_frozen(manifest_sha)
     problems += check_manifest_against_disk(manifest)
     problems += check_marker_agrees_with_manifest(manifest, release)
+    # The Charter against its PUBLICATION, not only its freeze marker. A
+    # charter-only release rebuilt at a later sequence is internally consistent
+    # and would pass every check above; it is not the published Charter.
+    problems += [f"[CHARTER_IDENTITY] {p}" for p in records.charter_record_problems(RECORD)]
     if problems:
         print("PACKAGE REFUSED. The frozen release is not internally consistent:")
         for p in problems:
@@ -756,37 +1093,67 @@ def main(argv):
         return 2
     print("  record check   matches its deterministic regeneration")
 
-    for label, cmd in (("build tests", [sys.executable, "test_build.py"]),
-                       ("verifier tests", [sys.executable, "test_verify_live.py"]),
-                       ("gate tests", [sys.executable, "test_package.py"])):
-        if not os.path.isfile(os.path.join(HERE, cmd[1])):
-            print(f"PACKAGE REFUSED: {cmd[1]} is missing.")
+    if run_test_suites() != 0:
+        return 2
+
+    if check_only:
+        return 0
+
+    write_package(PACKAGE_NAME, CONTENTS)
+    return 0
+
+
+TEST_SUITES = (("build tests", "test_build.py"),
+               ("verifier tests", "test_verify_live.py"),
+               ("gate tests", "test_package.py"),
+               ("namespace tests", "test_namespaces.py"))
+
+
+def test_environment():
+    """The environment the test suites run in: this gate's selections removed.
+
+    The suites build, package and verify their own sandboxes and set every
+    PVR_ variable they rely on. Inherited, the gate's own selection leaked into
+    them: run as `PVR_RELEASE=<release> package.py`, every nested `package.py`
+    in test_package.py gated that release instead of its sandbox's, and all 58
+    gate tests failed on fixture state. PVR_NO_RECURSE is kept, because it is how
+    the nested full gate in test_package.py terminates.
+    """
+    return {k: v for k, v in os.environ.items()
+            if not k.startswith("PVR_") or k == "PVR_NO_RECURSE"}
+
+
+def run_test_suites():
+    for label, script in TEST_SUITES:
+        if not os.path.isfile(os.path.join(HERE, script)):
+            print(f"PACKAGE REFUSED: {script} is missing.")
             return 2
         if os.environ.get("PVR_SKIP_TESTS") == "1":
             print(f"  {label:<14} SKIPPED (PVR_SKIP_TESTS=1)")
             continue
-        r = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True)
+        r = subprocess.run([sys.executable, script], cwd=HERE, env=test_environment(),
+                           capture_output=True, text=True)
         if r.returncode != 0:
             print(r.stdout[-3000:])
             print(r.stderr[-3000:])
             print(f"PACKAGE REFUSED: {label} failed with exit {r.returncode}")
             return 2
         print(f"  {label:<14} ok")
+    return 0
 
-    if check_only:
-        return 0
 
-    tar_path = os.path.join(HERE, f"{PACKAGE_NAME}.tar.gz")
+def write_package(name, contents):
+    tar_path = os.path.join(HERE, f"{name}.tar.gz")
     with tarfile.open(tar_path, "w:gz") as t:
-        for item in CONTENTS:
+        for item in contents:
             p = os.path.join(HERE, item)
             if os.path.exists(p):
-                t.add(p, arcname=os.path.join(PACKAGE_NAME, item))
-            elif not item.startswith(("publications", "releases")):
+                t.add(p, arcname=os.path.join(name, item))
+            elif not item.startswith(("publications", "releases", "ledgers")):
                 print(f"  WARNING        {item} is absent from the package")
     print(f"  package        {os.path.basename(tar_path)}  "
           f"{os.path.getsize(tar_path):,} bytes  sha256 {sha(tar_path)[:16]}…")
-    return 0
+    return tar_path
 
 
 if __name__ == "__main__":
