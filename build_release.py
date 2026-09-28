@@ -193,7 +193,13 @@ def release_target():
             "release directory named at execution; publish/ is published and immutable")
     release_dir = os.path.abspath(RELEASE_DIR_ENV)
     name = os.path.basename(release_dir)
-    if os.path.dirname(release_dir) != HERE:
+    # Compare resolved paths. On macOS the temporary and home trees can be reached
+    # through a symbolic link (/var is /private/var), and the working directory is
+    # reported resolved while an environment path may not be. Found 28 September
+    # 2026 when the full gate failed 54 tests on the operator's Mac and passed on
+    # Linux, where /var is not a link. The rule is unchanged: a release lives
+    # directly beside this builder.
+    if os.path.realpath(os.path.dirname(release_dir)) != os.path.realpath(HERE):
         raise BuildError(
             "RELEASE_DIR",
             f"{release_dir} is not a release directory beside this builder. Releases are "

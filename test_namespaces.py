@@ -1093,6 +1093,33 @@ class TestReleaseTarget(Sandbox):
         self.assertEqual(2, r.returncode)
         self.assertIn("[RELEASE_DIR]", r.stdout)
 
+    def test_a_release_reached_through_a_symlink_is_beside_the_builder(self):
+        # Regression, 28 September 2026: on macOS /var is a link to /private/var,
+        # the builder's own location is reported resolved and PVR_RELEASE_DIR was
+        # not, so every build under the system temporary directory was refused and
+        # the gate failed 54 tests there while passing on Linux. The same shape is
+        # built here on any platform by addressing the sandbox through a link.
+        linkdir = tempfile.mkdtemp(prefix="ns-link-")
+        self.addCleanup(shutil.rmtree, linkdir, True)
+        link = os.path.join(linkdir, "sandbox")
+        os.symlink(self.dir, link)
+        r = self.run_script("build_release.py", PVR_ALLOW_TEST_INPUT="1",
+                            PVR_RELEASE_DIR=os.path.join(link, RELEASE))
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertTrue(os.path.isfile(os.path.join(self.dir, RELEASE, "charter", "manifest.json")))
+
+    def test_a_link_does_not_admit_a_release_outside_the_repository(self):
+        elsewhere = tempfile.mkdtemp(prefix="ns-elsewhere-")
+        self.addCleanup(shutil.rmtree, elsewhere, True)
+        linkdir = tempfile.mkdtemp(prefix="ns-link-")
+        self.addCleanup(shutil.rmtree, linkdir, True)
+        link = os.path.join(linkdir, "elsewhere")
+        os.symlink(elsewhere, link)
+        r = self.run_script("build_release.py", PVR_ALLOW_TEST_INPUT="1",
+                            PVR_RELEASE_DIR=os.path.join(link, "rel"))
+        self.assertEqual(2, r.returncode)
+        self.assertIn("[RELEASE_DIR]", r.stdout)
+
     def test_a_frozen_release_is_not_rebuilt_over(self):
         self.built()
         before = tree(self.rel())
