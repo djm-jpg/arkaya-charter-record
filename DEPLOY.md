@@ -370,3 +370,73 @@ recorded date.
 Gate v18, the schema release, the historical-validity assertion and the authority
 classification of the six exposed artefacts are unaffected by this deployment and remain held.
 Publication does not cure any of them, and the record says so on its face.
+
+---
+
+## Multiple records: the Charter carried, the disclosure record built (28 September 2026)
+
+This section is design rationale for releases after sequence 1, in the same standing as the
+rest of this document: the executable sequence for any such release is its own runbook.
+
+**What changed, and what did not.** The pipeline now carries more than one record. The
+registry `records.py` names each record once: its path, its mode, its canonical URI, its own
+first-publication ledger, index ledger and snapshot location. Two records are registered:
+
+| Record | Path | Mode | Ledgers and snapshots |
+|---|---|---|---|
+| Arkaya Schema Independence Charter | `/charter/` | carried | `first_publication.json`, `published_indexes.json`, `publications/<seq>/` (unchanged) |
+| Arkaya governance disclosure record | `/disclosures/` | built | `ledgers/disclosures/first_publication.json`, `ledgers/disclosures/published_indexes.json`, `ledgers/disclosures/publications/<seq>/` |
+
+`publish/`, `releases/publish.json`, the Charter ledgers and `publications/1/` do not move and
+are never written by a multi-record release. `build_publication_set.py` is left byte-identical,
+because the published Charter manifest records its SHA-256 and the gate checks the shipped
+builder against it.
+
+**The Charter is carried, never rebuilt.** A rebuild changes `index.json` (`as_of`, and the
+sequence if advanced), so a rebuilt Charter is a different record under the same name.
+`build_release.py` copies `publish/charter/` verbatim and proves the copy against the published
+manifest digest registered in `records.py` (`b926170e…`): the manifest hashes to it, every
+object matches it, nothing else is present. It does so before promotion and again after. The
+same identity is required by `package.py`, by `verify_live.py` (against the served Charter),
+and by `record_publication.py`. A release without `charter/`, with a byte of it altered, or
+carrying only the disclosure record, is refused at each of them. A Charter change is a
+separately authorised act for which no path exists here; asking for one
+(`PVR_CHARTER_CHANGE`, or registering the Charter as built) is refused as `CHARTER_CHANGE`.
+
+**Registering the disclosure carrier.** The single place is the block between
+`BEGIN DISCLOSURE REGISTRATION` and `END DISCLOSURE REGISTRATION` in `records.py`. It ships as
+a placeholder, and the builder refuses a placeholder or a partly completed registration
+(`REGISTRY`). At freeze, and only then, the operator places the carrier in
+`inputs/disclosures/` and completes the block: record slug, title, and per version the source
+file name, SHA-256, byte count and document date. Nothing else is edited. The test suite uses
+synthetic inputs from `test_fixtures/`, each marked `ARKAYA-TEST-INPUT`; the builder refuses
+them without `PVR_ALLOW_TEST_INPUT=1`, and the live verifier never approves a release built
+from one.
+
+**The sequence, in outline.** Each step has its single-record counterpart above.
+
+```
+PVR_RELEASE_DIR=<new release dir> python3 build_release.py          # A1: builds and freezes
+PVR_RELEASE=<release name> python3 package.py                        # A3: gates and packages
+python3 record_publication.py --bind --release <release name> --commit <sha> --tag <tag>
+# deploy the <release name>/ folder, which holds charter/, disclosures/ and the pointer
+python3 verify_live.py --release=<release name>                      # D1: from the deploy root
+python3 record_publication.py --release <release name> --evidence <file> \
+  --deploy-id <id> --deploy-permalink <url> --commit <sha> --tag <tag>
+```
+
+The release directory is named at execution by `PVR_RELEASE_DIR`; it must be new, and it may
+not be `publish/`. The live verifier checks each record against its own frozen manifest with
+every check the Charter has, requires the deploy root to link every record, and adds the
+Charter identity check; production approval is withheld if either record fails or the Charter
+is absent or altered. Recording writes the disclosure record's ledgers and snapshot only, and
+records the Charter as carried unchanged at sequence 1 with no new first-publication date; the
+snapshot holds both manifests and the live evidence.
+
+**What the multi-record gate does not add.** The acceptance suite in `vendor/` is specified
+around the Charter's lineage. For a multi-record release the Charter's retained runs apply,
+because the carried Charter is the manifest they were taken against; no acceptance-suite runs
+exist for the disclosure record. Its gate is the structural one: frozen, matching its own
+manifest with nothing unnamed, builder, registry and registered inputs identical to the shipped
+files, and an independent rebuild reproducing everything but the manifest (tested in
+`test_namespaces.py`).
