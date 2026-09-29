@@ -88,11 +88,11 @@ this release does not change.
 |---|---|
 | `release-002` | `ce30c9dc4cc2896ee4f2e56fe465de7685993425`, frozen-release commit |
 | `publication-002` | `7822db77cf8cb6d49c70c432373c6c84e680f711`, publication-evidence commit |
-| `evidence-005` | the commit that carries this log (steps 158-172); not known when this line was written |
-| `evidence-006` | the next-day close-out (steps 181-195); outstanding |
+| `evidence-005` | `fb38e40a082608b80ee528c6842c73c4bcb75736`, baseline and publication log; annotated, **unsigned**; pushed 2026-09-28 about 23:13 BST |
+| `evidence-006` | the next-day close-out (steps 181-195); named in the closing note, because a commit cannot name itself |
 
-A commit cannot name its own identifier. `evidence-005` is therefore recorded in the closing note
-and in the close-out commit, both outside this commit.
+A commit cannot name its own identifier. `evidence-005` was added at the close-out (step 180), and
+`evidence-006` is recorded in the closing note filed at step 199, outside the repository.
 
 ## 7. Preservation
 
@@ -112,7 +112,7 @@ All seven completed on the first submission.
 | Field | Value | Step |
 |---|---|---|
 | Software Heritage "save code now" | origin `https://github.com/djm-jpg/arkaya-charter-record`, type git; request **accepted**, about 23:00 BST (22:00Z) | 149-151 |
-| SWHID | **outstanding**; requested at the next-day check | 179 |
+| SWHID | `swh:1:snp:48af66b76f7010dfaffecfd9f6e7eabdb0704f86`: save task succeeded, visit full at 2026-09-28T22:00:52Z. The snapshot holds `refs/heads/main` = `7822db7` and tags `release-002` and `publication-002`. `evidence-005` was pushed after the visit and is not in it. Read by the session from the Software Heritage API | 179 |
 
 ## 8. Charter comparison after deployment
 
@@ -135,5 +135,14 @@ All seven completed on the first submission.
 
 ## 10. Next-day checks (steps 173-180)
 
-Outstanding. Due 29 September 2026: authoritative live verification in VERIFY, the Charter
-comparison re-run, and the SWHID.
+| Field | Value | Step |
+|---|---|---|
+| Scheduled | a reminder into the session, fired 2026-09-29T08:00Z | 173 |
+| Authoritative live verification | VERIFY on the operator's machine against `https://record.arkayarisk.com/`, 2026-09-29T09:11:32Z: **100/100 checks passed, PRODUCTION APPROVAL: GRANTED**, exit 0; root pointer served unchanged | 174-176 |
+| Evidence | `verification/live/live_verification_20260929T091132.json`, 21,316 bytes, SHA-256 `4010206bc966203a4a1acdc583f2864fae93e9e15beaefc543139679978e4c63`; equal on the filed copy and WORKING | 175 |
+| Charter comparison, re-run unchanged | 2026-09-29 about 09:13Z, after step 174: exit 0, live **12/12 PASS**; baseline advanced, `pvr_snapshot_live.json` now `8e8176b7d7b67d8c39006a67b6e57d4094e87b16f49405419188521683286ca6`. Full output `verification/live/charter_comparison_publish-002_step177.txt` | 177-178 |
+| Earlier session run of the comparison | 2026-09-29 about 08:02Z, before step 174, also exit 0 and 12/12; superseded by the in-order run above, which is the one recorded | 177 |
+| SWHID | see Section 7 | 179 |
+
+**Result.** The published state held for a day unchanged: both namespaces served their frozen
+bytes, the Charter passed its acceptance suite, and no finding arose.
