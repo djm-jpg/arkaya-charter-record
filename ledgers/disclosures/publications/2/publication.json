@@ -1,0 +1,41 @@
+{
+  "schema": "arkaya-publication/2",
+  "namespace": "disclosures",
+  "sequence": 2,
+  "published_on": "2026-10-15",
+  "recorded_at": "2026-10-15T17:06:43.978548+00:00",
+  "release": "publish-003",
+  "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+  "canonical_root": "https://record.arkayarisk.com/",
+  "deploy_id": "6ad10611834ef8909c7a9c79",
+  "deploy_permalink": "https://6ad10611834ef8909c7a9c79--arkaya-record.netlify.app/",
+  "release_commit": "79e90e3b43930e26a92f3799a4777ca623b0a9d6",
+  "release_tag": "release-003",
+  "release_bound_at": "2026-10-15T16:44:40.976922+00:00",
+  "manifest_sha256": "2375cb08ea89b9abd1f5fcf4508fb7e61e43121526a127dc567edfd5e5680fc9",
+  "index_sha256": "4e719340dfca982fb34f24b7e98def44388b3455f3093c7f636840fbe8203c15",
+  "evidence": "live_verification_20261015T170429.json",
+  "test_input": false,
+  "namespaces": {
+    "disclosures": {
+      "state": "published at this sequence",
+      "sequence": 2,
+      "manifest_sha256": "2375cb08ea89b9abd1f5fcf4508fb7e61e43121526a127dc567edfd5e5680fc9",
+      "index_sha256": "4e719340dfca982fb34f24b7e98def44388b3455f3093c7f636840fbe8203c15",
+      "first_publication_entries": [
+        "v4"
+      ]
+    },
+    "charter": {
+      "state": "carried unchanged",
+      "carried_from_release": "publish",
+      "sequence": 1,
+      "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+      "index_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+      "first_publication_entries": [],
+      "ledgers_written": false,
+      "note": "The Charter was carried byte-identical from its published release and verified live as the published Charter. It was not published again: its first-publication dates, index ledger and snapshots are unchanged."
+    }
+  },
+  "basis": "recorded from a passing, approved live verification of every namespace of the frozen release at the canonical address on the release date, with the Charter verified as the published Charter and every release object validated immediately before recording"
+}

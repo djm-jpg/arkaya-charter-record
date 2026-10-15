@@ -1,0 +1,52 @@
+{
+  "schema": "arkaya-release/2",
+  "release_dir": "publish-003",
+  "release_date": "2026-10-15",
+  "built_at": "2026-10-15T16:34:48.423453+00:00",
+  "canonical_root": "https://record.arkayarisk.com/",
+  "root_pointer_sha256": "5c2a1b8c55c16183d4a94deff459617f48394346ce69254550d33ba2206dd787",
+  "release_builder": {
+    "script": "build_release.py",
+    "source_path": "build_release.py",
+    "version": "2026-09-28.1",
+    "sha256": "d973186ccf98bd63a22815cf0eaf8b36915e51caf01e44779bf3555717765f6d"
+  },
+  "registry_sha256": "78133311589c784eea11aeb1d6acad87fc786b01b2452671e64f1b69ab5cbdbb",
+  "date_mismatch_reason": null,
+  "test_input": false,
+  "namespaces": {
+    "charter": {
+      "mode": "carried",
+      "path": "charter",
+      "carried_from_release": "publish",
+      "sequence": 1,
+      "canonical_uri": "https://record.arkayarisk.com/charter/",
+      "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+      "index_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+      "versions_awaiting_first_publication": []
+    },
+    "disclosures": {
+      "mode": "built",
+      "path": "disclosures",
+      "sequence": 2,
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+      "manifest_sha256": "2375cb08ea89b9abd1f5fcf4508fb7e61e43121526a127dc567edfd5e5680fc9",
+      "index_sha256": "4e719340dfca982fb34f24b7e98def44388b3455f3093c7f636840fbe8203c15",
+      "builder": {
+        "script": "build_release.py",
+        "source_path": "build_release.py",
+        "version": "2026-09-28.1",
+        "sha256": "d973186ccf98bd63a22815cf0eaf8b36915e51caf01e44779bf3555717765f6d"
+      },
+      "versions_awaiting_first_publication": [
+        "v4"
+      ]
+    }
+  },
+  "published": false,
+  "state": "frozen release candidate; not deployed, not published",
+  "release_commit": "79e90e3b43930e26a92f3799a4777ca623b0a9d6",
+  "release_tag": "release-003",
+  "bound_at": "2026-10-15T16:44:40.976922+00:00",
+  "binding_bound": "binds this frozen release to a commit identifier supplied by the operator. It does not verify that the commit exists in any repository, or that the repository holds these bytes."
+}
