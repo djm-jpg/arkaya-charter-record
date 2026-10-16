@@ -103,14 +103,14 @@ This release carries `/charter/` byte-identical from the published release, carr
 |---|---|
 | `release-003` | `79e90e3b43930e26a92f3799a4777ca623b0a9d6`, frozen-release commit |
 | `publication-003` | `2670f8be1aa03cace74bdd54a13a86d30984c8ba`, publication-evidence commit |
-| `evidence-007` | the commit carrying this log; named at the close-out, because a commit cannot name itself |
-| `evidence-008` | the next-day close-out; named in the closing note |
+| `evidence-007` | `242c9c517488c3cb07db89b3fb056074b5a06a83`, baseline and publication log; annotated, **unsigned**; tagged 2026-10-15 18:46 BST |
+| `evidence-008` | the next-day close-out (Part F); named in the closing note, because a commit cannot name itself |
 
 ## 8. Preservation
 
 | Capture | Wayback timestamp (UTC) | Step |
 |---|---|---|
-| `https://record.arkayarisk.com/` | **outstanding.** Save Page Now reported a capture "52 seconds ago" at about 17:25Z, but every lookup still resolves to `20260928214909`. The root pointer is byte-identical to that capture. Resubmission due after 18:25Z, or at F | E2 |
+| `https://record.arkayarisk.com/` | `20261016084520`, reported by Save Page Now ("A snapshot was captured") on DM's resubmission at about 09:45 BST on 16 October, with the notice that registration is delayed and lookups may redirect to an earlier version for now. Not yet confirmed by a lookup. The 15 October attempts resolved only to `20260928214909`. The root pointer served is byte-identical throughout (`5c2a1b8c…d787`, F2) | E2, F |
 | `/disclosures/` | `20261015172652` | E2 |
 | `/disclosures/index.json` | `20261015172924` | E2 |
 | `/disclosures/index.html` | `20261015173039` | E2 |
@@ -123,7 +123,7 @@ Each capture is at `https://web.archive.org/web/<timestamp>/https://record.arkay
 | Field | Value | Step |
 |---|---|---|
 | Software Heritage "save code now" | origin `https://github.com/djm-jpg/arkaya-charter-record`, type git; request **accepted**, about 18:23 BST (17:23Z) | E3 |
-| SWHID | outstanding; read at F4 | F4 |
+| SWHID | `swh:1:snp:685bfec03904d09cd8a5c27bb2a6b03a75d533b4`: visit 7, status full, 2026-10-15T20:11:21Z, after DM's resubmission at about 21:11 BST. The snapshot holds `refs/heads/main` = `242c9c5` and tags `release-001` to `release-003`, `publication-001` to `publication-003` and `evidence-002` to `evidence-007`. The 17:23Z visit (snapshot `991ed98c43119ab3cd773ca4edfdee0ee5a29bb9`) predates `evidence-007`. Read by the session from the Software Heritage API on 2026-10-16 | F4 |
 
 ## 9. Charter comparison after deployment
 
@@ -142,7 +142,7 @@ Each capture is at `https://web.archive.org/web/<timestamp>/https://record.arkay
 4. **C2 read by the session.** The published deploy was read through the Netlify connector, not by the operator in the dashboard. C3 needed no action: auto publishing had stayed locked since `publish-002`.
 5. **D6 first attempt.** The tag push was run before the tag was created (`src refspec publication-003 does not match any`, non-zero exit). Nothing was created. The tag was then created and the push repeated (S1, S4).
 6. **D9 exit status.** An unexecuted line was cleared with Ctrl+U before `echo $?`; the status read 0. The check output showed every stage ok.
-7. **Root capture outstanding** (Section 8).
+7. **Root capture late.** The E2 root capture did not register on 15 October: two submissions resolved to the 28 September capture. A third submission at the next-day checks reported capture `20261016084520`, with registration delayed; it is recorded as reported, not yet confirmed by a lookup. The root pointer's bytes did not change between the two captures (Section 8).
 8. **Local test by-products excluded.** `package.py`'s test stages write `verification/live/live_verification_*.json` files against a local test server; none is committed (S10). The E4 run also left four untracked acceptance-suite cache files (`vendor/acceptance_suite/__pycache__/*.cpython-313.pyc`) in WORKING; `package.py` refused them as unrecorded, and they were removed before packaging.
 9. **v3 labelled "superseded" in the public index.** The builder marks every earlier version superseded. v4 does not supersede v3's entries; the registration reason states it. A pipeline change for successor-type records is a finding for a later work order, not made in this run.
 10. **The record's build-2 change list is incomplete** (four changes not listed). Disposed as not blocking under R3 by `APPROVE AR-20261015-019-e7xrty`, override limited to change-log completeness; carried to the next disclosure record.
@@ -150,4 +150,14 @@ Each capture is at `https://web.archive.org/web/<timestamp>/https://record.arkay
 
 ## 11. Next-day checks (Part F)
 
-Outstanding at the time of writing: F1 canonical verification, F2 evidence check, F3 Charter comparison re-run, F4 SWHID, and the root capture resubmission.
+| Field | Value | Step |
+|---|---|---|
+| Scheduled | a reminder into the session for 2026-10-16T09:00Z; disabled unfired when DM started Part F at 09:32 BST | E7 |
+| Authoritative live verification | VERIFY `~/arkaya-verify-publish-003` on the operator's machine against `https://record.arkayarisk.com/`, 2026-10-16T08:40:41Z: **103/103 checks passed, PRODUCTION APPROVAL: GRANTED**, exit 0 | F1 |
+| Evidence | `verification/live/live_verification_20261016T084041.json`, 22,281 bytes, SHA-256 `023ae626dec88af687692cdc51fbfc05ed369286d5c1f7088aeef2617f75fb60`; copied to DROP by the operator (exit 0), hashed on the device, equal in WORKING | F1-F2 |
+| Evidence fields | canonical base; `rehearsal: false`; `test_input: false`; `passed: true`; `production_approval: true`; no approval blockers, no findings, no unexercised checks; Charter manifest published, local and served all `b926170e…2ac6`; root pointer served `5c2a1b8c…d787`, unchanged | F2 |
+| Charter comparison, re-run unchanged | 2026-10-16 about 08:43Z, after F1: exit 0, live **12/12 PASS**, current `v3`, 4 versions; baseline advanced, `pvr_snapshot_live.json` now `09c444a25555c3c52598405ff2abb6b2263a7adbe3ff25d66a2a7f29242db91f`. Full output `verification/live/charter_comparison_publish-003_F3.txt` (5,371 bytes, SHA-256 `6248a81aacf1dc90bac01a66d9fa254a5046a5f15baaac7a3488a33c7248d8fb`) | F3 |
+| SWHID | see Section 8 | F4 |
+| Root capture | see Section 8 and deviation 7 | E2, F |
+
+**Result.** The published state held overnight unchanged: both namespaces served their frozen bytes, the Charter passed its acceptance suite, and no finding arose.
