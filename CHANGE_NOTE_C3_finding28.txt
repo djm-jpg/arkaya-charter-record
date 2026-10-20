@@ -1,0 +1,23 @@
+C3 next version, prepared for Claude test re-run
+Finding 28: source-only registry loading
+
+The inherited getns2.diff replaces ordinary import records in build_release.py,
+package.py, record_publication.py and verify_live.py with _registry_from_source.
+Each entry point reads records.py as bytes, compiles that source and executes it
+in a fresh module on every run, bypassing Python's cached records.py bytecode.
+
+Why: a registry edit made within the bytecode cache timestamp interval, with the
+same source size, can leave an apparently current .pyc containing an older
+registration. The pipeline must validate the source the operator supplied.
+
+This changes registry loading, not schema bytes or disclosure content. It still
+executes trusted local Python registry code; it is not a sandbox or evidence of
+publication. Failure to read or compile the source remains an error.
+
+Coverage: TestGetLive.test_a_stale_bytecode_cache_of_the_registry_is_never_trusted
+constructs the stale-cache condition and checks the source is used. The C3 test
+logs retain its result. The loader code is inherited unchanged; this note repairs
+the missing full-diff explanation identified in finding 28.
+
+Preparation only under CDX-SLATE (a) C3. Kept out of every release until David
+makes a separate decision. This file grants no publication or deployment approval.
