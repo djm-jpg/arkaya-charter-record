@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "ARKAYA-TEST-INPUT. Synthetic GET schema fixture for the test suite only. It is not the GET schema and must never be registered in the shipped records.py or published. Issue 2.",
+  "title": "TEST INPUT synthetic GET schema, issue 2",
+  "type": "object"
+}

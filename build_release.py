@@ -11,13 +11,39 @@ every later release.
 WHAT A RELEASE IS NOW. A release directory is the whole of what is served:
 
     <release>/                          <- Netlify publish directory
-        index.html                      pointer to both records; part of neither
+        index.html                      pointer to every record; part of none
         charter/                        <- CARRIED from publish/charter/, byte for byte
-        disclosures/                    <- BUILT here
+        disclosures/                    <- BUILT here, or CARRIED forward (below)
             index.json index.html manifest.json manifest.json.sha256
             <record-slug>/v<N>/<record-slug>-v<N>.md
+        get/                            <- BUILT here, or CARRIED forward (below)
+            index.json index.html manifest.json manifest.json.sha256
+            <version slug>/<source file name>     bytes exactly as input
 
 The namespaces, their modes, paths and ledgers come from `records.py`.
+
+CARRYING A BUILT RECORD FORWARD (19 October 2026). A built namespace named in
+the CARRY REGISTRATION block of `records.py` is not rebuilt: its record is
+copied verbatim from the published release named there and proved against the
+registered published manifest digest, the namespace's own index ledger, its
+immutable snapshot and that release's freeze marker, before promotion and again
+after it, exactly as the Charter is. A GET-only release carries the disclosure
+record this way; a release with nothing registered as carried builds both.
+
+THE GET SCHEMA RECORD IS OPTIONAL. When records.py registers
+GET_REGISTRATION = ABSENT (as it ships), the release has no get/ directory, the
+pointer page does not link /get/, and every file of the release except
+disclosures/manifest.json and its sidecar is byte-identical to what the builder
+at b4e36d3 produced for the same inputs and clock. Those two differ only because
+the manifest records the builder's and the registry's source digests, and both
+files changed (test_namespaces.TestGetAbsentRegression). Any other value is
+validated in full.
+
+Each registered issue is copied from inputs/get/ to
+get/<version slug>/<source file name> with its bytes unchanged, and its SHA-256
+and byte count are recomputed from the copy against the registration. The
+builder never produces /get/1.0 or /get/1.0/: a registration naming version 1.0
+is refused by name (GET_PATH), and so is any built path beneath it.
 
 WHY THE CHARTER IS CARRIED AND NEVER REBUILT. A rebuild changes index.json
 (as_of, and the sequence if advanced), so the rebuilt Charter is a different
@@ -33,15 +59,22 @@ Refusals, each with its stage, each before anything is replaced:
                     release named, or a directory that is not a release
     FROZEN          the named release is frozen and PVR_REPLACE_RELEASE unset,
                     or is recorded as published and may never be replaced
-    REGISTRY        the registry is malformed, or the disclosure carrier is not
-                    registered (the shipped placeholder)
+    REGISTRY        the registry is malformed, a built namespace is not
+                    registered (the shipped placeholder), the carry block is
+                    malformed, or every built namespace is carried
     CHARTER_CHANGE  a Charter change was requested; no authorised path exists
     CHARTER_CARRY   the carried Charter source is absent or not published
     CHARTER_IDENTITY  any byte of the carried Charter differs from publication
-    INPUTS          a disclosure input absent, altered or unexpected
+    CARRY           a record registered as carried forward is not the LATEST
+                    published release of that record (from its index ledger
+                    and the published freeze markers)
+    CARRY_IDENTITY  a record registered as carried forward is not, byte for
+                    byte, the record its published release published
+    GET_PATH        a GET registration or built path would produce /get/1.0
+    INPUTS          a registered input absent, altered or unexpected
     TEST_INPUT      a synthetic test input offered without PVR_ALLOW_TEST_INPUT=1
     RELEASE_DATE    as for the Charter builder
-    SEQUENCE        a disclosure sequence already published, or behind the record
+    SEQUENCE        a namespace sequence already published, or behind the record
     LEDGER          a ledger that cannot be read
 
     PVR_RELEASE_DIR=<new release dir> python3 build_release.py
@@ -63,7 +96,31 @@ from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import records  # noqa: E402
+
+
+def _registry_from_source(here):
+    """records.py compiled from its SOURCE on every run, never from a bytecode cache.
+
+    Found 19 October 2026: Python reuses a cached records.cpython-*.pyc while the
+    source's size and whole-second modification time are unchanged. A
+    registration rewritten within one second with a digest of the same length
+    (as a test does, and as any scripted edit can) was then read from the stale
+    cache: the live verifier compared the served GET bytes with the OLD
+    registered digest and passed, while the release recorded the digest of the
+    new file. The registry decides what is built, gated, verified and recorded,
+    so it is never taken from a cache.
+    """
+    import types
+    path = os.path.join(here, "records.py")
+    module = types.ModuleType("records")
+    module.__file__ = path
+    sys.modules["records"] = module
+    with open(path, "rb") as f:
+        exec(compile(f.read(), path, "exec"), module.__dict__)
+    return module
+
+
+records = _registry_from_source(HERE)
 
 BUILDER_VERSION = "2026-09-28.1"
 BUILDER_SOURCE_PATH = "build_release.py"
@@ -76,6 +133,14 @@ ALLOW_DATE_MISMATCH = os.environ.get("PVR_ALLOW_DATE_MISMATCH") == "1"
 DATE_MISMATCH_REASON = os.environ.get("PVR_DATE_MISMATCH_REASON", "").strip()
 ALLOW_TEST_INPUT = os.environ.get("PVR_ALLOW_TEST_INPUT") == "1"
 DISCLOSURE_SEQUENCE = os.environ.get("PVR_DISCLOSURE_SEQUENCE", "").strip()
+GET_SEQUENCE = os.environ.get("PVR_GET_SEQUENCE", "").strip()
+
+# Per built namespace: the noun used in refusals, the sequence override, and
+# what the registration block is called.
+LABEL = {"disclosures": "disclosure", "get": "GET"}
+SEQUENCE_OVERRIDE = {"disclosures": DISCLOSURE_SEQUENCE, "get": GET_SEQUENCE}
+REGISTRATION_BLOCK = {"disclosures": ("the disclosure carrier", "DISCLOSURE REGISTRATION"),
+                      "get": ("the GET schema", "GET REGISTRATION")}
 
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
@@ -122,6 +187,49 @@ DISCLOSURE_PROVENANCE_CLAIM = (
     "registered inputs. They do not independently prove that this builder "
     "historically executed."
 )
+
+GET_AS_OF_CAVEAT = (
+    "as_of states the position asserted by this issue of the GET schema record on "
+    "that date. It does not warrant the absence of later schema issues that have not "
+    "yet been published to this record."
+)
+
+GET_NOT_ASSERTED = (
+    "Publication records the documentary state of each schema issue and its "
+    "publication metadata. It does not ratify any issue, it does not make a draft "
+    "normative, and it does not establish that any implementation conforms to it. "
+    "Each issue's status is stated as registered, not inferred."
+)
+
+GET_RETENTION = (
+    "Each published schema issue, publication index and associated integrity record "
+    "is retained permanently as part of Arkaya's governance record. Recipients may "
+    "retain independent copies for evidential and verification purposes."
+)
+
+GET_DEFINITIONS = {
+    "version":
+        "The version slug of the issue, which is also its path under this record. A "
+        "documentary label, not a claim about compatibility with any other issue.",
+    "document_date":
+        "The date stated for that issue of the schema. A documentary fact about the "
+        "document, not a finding about anything it describes.",
+    "status":
+        "The status of the issue as registered when it was published, for example a "
+        "public draft for comment.",
+    "published_to_record":
+        "The date that issue was released to this record at its canonical address. No "
+        "earlier publication date is asserted. Evidence that the record was reachable "
+        "at the canonical address on that date, and matched this manifest, is retained "
+        "in this record's own publication ledger. This field is not itself that evidence.",
+    "sequence":
+        "The revision number of this record's index. It is this record's own counter, "
+        "advances by one whenever an index differing in any published field is made "
+        "current, and is never reused for different content.",
+    "content_digest":
+        "The SHA-256 of the file exactly as served. Each schema file is served with its "
+        "bytes exactly as registered: no newline, encoding or byte-order-mark change.",
+}
 
 
 class BuildError(Exception):
@@ -338,21 +446,41 @@ def carry_charter(src, dst):
 
 # -------------------------------------------------------------- disclosures
 
-def validate_registration():
-    reg = records.DISCLOSURE_REGISTRATION
-    problems = records.registration_problems(reg)
+def validate_registration(ns=None):
+    ns = ns or records.DISCLOSURES
+    if ns["name"] == "get":
+        reserved = records.reserved_get_versions()
+        if reserved:
+            raise BuildError(
+                "GET_PATH",
+                f"the GET registration names version {', '.join(repr(v) for v in reserved)}. "
+                f"/get/1.0 and /get/1.0/ are refused by name: this pipeline never produces "
+                f"them. Nothing was built")
+    reg = records.registration_for(ns["name"])
+    problems = records.registration_problems_for(ns["name"])
     if problems:
+        what, block = REGISTRATION_BLOCK[ns["name"]]
         raise BuildError(
             "REGISTRY",
-            "the disclosure carrier is not registered in records.py (the block between "
-            "BEGIN and END DISCLOSURE REGISTRATION). An unregistered or placeholder input "
-            "cannot be built or published: " + "; ".join(problems))
+            f"{what} is not registered in records.py (the block between "
+            f"BEGIN and END {block}). An unregistered or placeholder input "
+            "cannot be built or published"
+            + (". A release without the GET record registers GET_REGISTRATION = ABSENT, "
+               "nothing else" if ns["name"] == "get" else "")
+            + ": " + "; ".join(problems))
     return reg
 
 
-def validate_disclosure_inputs(reg):
+def validate_carry_registration():
+    problems = records.carry_registration_problems()
+    if problems:
+        raise BuildError("REGISTRY", "the carry registration in records.py cannot be read: "
+                                     + "; ".join(problems))
+
+
+def validate_inputs(ns, reg):
     """Prove the registered inputs before touching any output."""
-    ns = records.DISCLOSURES
+    label = LABEL[ns["name"]]
     inputs = os.path.join(HERE, ns["inputs"])
     if not os.path.isdir(inputs):
         raise BuildError("INPUTS", f"input directory not found: {ns['inputs']}/")
@@ -360,10 +488,10 @@ def validate_disclosure_inputs(reg):
     found = {f for f in os.listdir(inputs) if not f.startswith(".")}
     missing = sorted(set(expected) - found)
     if missing:
-        raise BuildError("INPUTS", f"missing disclosure input(s): {', '.join(missing)}")
+        raise BuildError("INPUTS", f"missing {label} input(s): {', '.join(missing)}")
     unexpected = sorted(found - set(expected))
     if unexpected:
-        raise BuildError("INPUTS", f"unexpected disclosure input(s): {', '.join(unexpected)}")
+        raise BuildError("INPUTS", f"unexpected {label} input(s): {', '.join(unexpected)}")
     validated, test_input = {}, False
     for name, e in sorted(expected.items()):
         p = os.path.join(inputs, name)
@@ -382,24 +510,51 @@ def validate_disclosure_inputs(reg):
     if test_input and not ALLOW_TEST_INPUT:
         raise BuildError(
             "TEST_INPUT",
-            "a disclosure input carries the TEST INPUT marker. Synthetic fixtures are for "
+            f"a {label} input carries the TEST INPUT marker. Synthetic fixtures are for "
             "the test suite only; set PVR_ALLOW_TEST_INPUT=1 to build one in a sandbox. A "
             "release built from one is marked and is never granted production approval")
     return validated, test_input
 
 
-def disclosure_sequence(index_ledger):
+def namespace_sequence(ns, index_ledger):
+    label, override = LABEL[ns["name"]], SEQUENCE_OVERRIDE[ns["name"]]
     recorded = index_ledger.get("versions", {})
     highest = max((int(k) for k in recorded), default=0)
-    seq = int(DISCLOSURE_SEQUENCE) if DISCLOSURE_SEQUENCE else highest + 1
+    seq = int(override) if override else highest + 1
     if str(seq) in recorded:
-        raise BuildError("SEQUENCE", f"disclosure sequence {seq} has already been published. "
+        raise BuildError("SEQUENCE", f"{label} sequence {seq} has already been published. "
                                      f"Published indexes are immutable; advance the sequence")
     if seq <= highest:
-        raise BuildError("SEQUENCE", f"disclosure sequence {seq} is not above the highest "
-                                     f"published disclosure sequence {highest}. An index may "
+        raise BuildError("SEQUENCE", f"{label} sequence {seq} is not above the highest "
+                                     f"published {label} sequence {highest}. An index may "
                                      f"not be made current behind the record")
     return seq
+
+
+def builder_block():
+    """The release builder's identity, as every built manifest and the marker record it."""
+    return {"script": os.path.basename(__file__), "source_path": BUILDER_SOURCE_PATH,
+            "version": BUILDER_VERSION, "sha256": digest(os.path.abspath(__file__))}
+
+
+def carry_namespace(ns, source, dst):
+    """Copy a published built record verbatim, then prove the copy. Never regenerate."""
+    src = source["dir"]
+    os.makedirs(dst)
+    for dirpath, _, names in os.walk(src):
+        rel = os.path.relpath(dirpath, src)
+        target = os.path.join(dst, rel) if rel != "." else dst
+        os.makedirs(target, exist_ok=True)
+        for n in names:
+            shutil.copyfile(os.path.join(dirpath, n), os.path.join(target, n))
+    if tree(dst) != tree(src):
+        raise BuildError("CARRY_IDENTITY", f"the carried {ns['name']} copy differs from its "
+                                           f"source")
+    problems = records.carried_record_problems(dst, ns, source["manifest_sha256"],
+                                               source["index_sha256"])
+    if problems:
+        raise BuildError("CARRY_IDENTITY", f"the carried {ns['name']} copy is not the "
+                                           f"published record: " + "; ".join(problems))
 
 
 def render_disclosure_page(idx):
@@ -582,6 +737,200 @@ def build_disclosures(out, reg, validated, dates, sequence, now, date_reason, te
     return index, manifest, manifest_sha, index_sha
 
 
+# ---------------------------------------------------------------------- get
+
+def render_get_page(idx):
+    """get/index.html, rendered from get/index.json by this builder and nothing else."""
+    e = html.escape
+    rows = "\n".join(
+        f"""      <tr{' class="current"' if v['is_current'] else ''}>
+        <td><a href="{e(v['entry_url'])}">{e(v['version'])}</a></td>
+        <td>{e(v['document_date'])}</td>
+        <td>{e(v['published_to_record'])}</td>
+        <td>{e(v['status'])}<br><span class="b">{'current' if v['is_current'] else 'superseded by ' + e(v['superseded_by'])}</span></td>
+        <td>{e(v['reason'])}</td>
+        <td class="d"><code>{e(v['content_digest'].split(':', 1)[1])}</code><br><span class="b">{v['bytes']:,} bytes &middot; {e(v['mime_type'])}</span></td>
+      </tr>""" for v in idx["entries"])
+    return f"""<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Public GET schema record &middot; {e(idx['record'])}</title>
+<style>
+ :root{{--ink:#12211f;--mut:#5a6b68;--line:#d8e0de;--bg:#fbfcfc;--teal:#0f3d3a;--bronze:#8a6a3b}}
+ *{{box-sizing:border-box}}
+ body{{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}}
+ .wrap{{max-width:60rem;margin:0 auto;padding:2.5rem 1.25rem 4rem}}
+ h1{{font-size:1.5rem;margin:0 0 .25rem;color:var(--teal)}}
+ .sub{{color:var(--mut);margin:0 0 2rem;font-size:.95rem}}
+ h2{{font-size:1rem;margin:2.25rem 0 .6rem;color:var(--teal)}}
+ table{{width:100%;border-collapse:collapse;font-size:.9rem}}
+ th,td{{text-align:left;padding:.6rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}}
+ th{{font-weight:600;color:var(--mut);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}}
+ tr.current td{{background:#f2f7f6}}
+ code{{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}}
+ .b{{color:var(--mut);font-size:.78rem}}
+ .d{{max-width:20rem}}
+ .note{{border-left:3px solid var(--bronze);padding:.1rem 0 .1rem .9rem;margin:1rem 0;color:var(--mut);font-size:.9rem}}
+ dt{{font-weight:600;font-size:.85rem;margin-top:.7rem}}
+ dd{{margin:.15rem 0 0;color:var(--mut);font-size:.88rem}}
+ a{{color:var(--teal)}}
+ footer{{margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}}
+ @media(max-width:640px){{.d{{max-width:none}}table,thead,tbody,th,td,tr{{display:block}}th{{display:none}}td{{border:0;padding:.2rem .5rem}}tr{{border-bottom:1px solid var(--line);padding:.6rem 0}}}}
+</style></head><body><div class="wrap">
+<h1>Public GET schema record</h1>
+<p class="sub">{e(idx['record'])} &middot; sequence {idx['sequence']} &middot; as of {e(idx['as_of'])}</p>
+
+<div class="note">{e(idx['as_of_caveat'])}</div>
+
+<h2>Schema issues</h2>
+<table><thead><tr><th>Version</th><th>Document date</th><th>Published to this record</th><th>Status</th><th>Reason</th><th>SHA-256</th></tr></thead>
+<tbody>
+{rows}
+</tbody></table>
+
+<h2>What the fields mean</h2>
+<dl>
+{"".join(f"<dt>{e(k)}</dt><dd>{e(v)}</dd>" for k, v in idx["definitions"].items())}
+</dl>
+
+<h2>What this publication does not assert</h2>
+<p>{e(idx['not_asserted'])}</p>
+
+<h2>Retention</h2>
+<p>{e(idx['retention'])}</p>
+
+<h2>Verification</h2>
+<p>The machine-readable index is at <a href="index.json">index.json</a> and the integrity manifest at
+<a href="manifest.json">manifest.json</a>. To verify any schema issue, retrieve it and compare the SHA-256
+of the bytes received against the digest published above.</p>
+
+<footer>Arkaya Risk &middot; canonical URI <code>{e(idx['canonical_uri'])}</code></footer>
+</div></body></html>
+"""
+
+
+def build_get(out, reg, validated, dates, sequence, now, date_reason, test_input):
+    """Build the GET schema namespace into `out`.
+
+    Each schema file is copied byte for byte from inputs/get/ to
+    <version slug>/<source file name>. Nothing reads, parses or re-encodes it,
+    so no newline, encoding or byte-order mark changes, and the copy's SHA-256
+    and byte count are recomputed against the registration before anything is
+    indexed.
+    """
+    ns = records.GET
+    base = ns["canonical_uri"]
+    entries = reg["entries"]
+    os.makedirs(out)
+    rows = []
+    for i, e in enumerate(entries):
+        rel = f"{e['version']}/{e['src']}"
+        if records.get_path_problems([rel]):
+            raise BuildError("GET_PATH", "; ".join(records.get_path_problems([rel])))
+        src = os.path.join(HERE, ns["inputs"], e["src"])
+        dst = os.path.join(out, rel)
+        os.makedirs(os.path.dirname(dst))
+        shutil.copyfile(src, dst)
+        got, size = digest(dst), os.path.getsize(dst)
+        if got != e["sha256"] or size != e["bytes"]:
+            raise BuildError("COPY", f"get/{rel}: copy is {size} bytes, sha256 {got}; the "
+                                     f"registration is {e['bytes']} bytes, sha256 {e['sha256']}")
+        with open(src, "rb") as a, open(dst, "rb") as b:
+            if a.read() != b.read():
+                raise BuildError("COPY", f"get/{rel}: the served bytes are not the input bytes")
+        is_current = i == len(entries) - 1
+        row = {
+            "version": e["version"],
+            "document_date": e["document_date"],
+            "published_to_record": dates[e["version"]],
+            "status": e["status"],
+            "reason": e["reason"],
+            "predecessor": entries[i - 1]["version"] if i else None,
+            "is_current": is_current,
+            "entry_url": rel,
+            "canonical_uri": base + rel,
+            "mime_type": e["media_type"],
+            "content_digest": "sha256:" + got,
+            "bytes": size,
+            "source": validated[e["src"]]["path"],
+        }
+        if not is_current:
+            row["superseded_by"] = entries[i + 1]["version"]
+        rows.append(row)
+
+    index = {
+        "schema": "arkaya-get-record/1",
+        "record": ns["title"],
+        "namespace": ns["path"],
+        "canonical_uri": base,
+        "as_of": RELEASE_DATE,
+        "as_of_caveat": GET_AS_OF_CAVEAT,
+        "sequence": sequence,
+        "retention": GET_RETENTION,
+        "not_asserted": GET_NOT_ASSERTED,
+        "definitions": GET_DEFINITIONS,
+        "entries": rows,
+    }
+    index_path = os.path.join(out, "index.json")
+    with open(index_path, "w") as f:
+        json.dump(index, f, indent=2)
+    index_sha = digest(index_path)
+    with open(os.path.join(out, "index.html"), "w") as f:
+        f.write(render_get_page(index))
+
+    def obj(path, mime):
+        full = os.path.join(out, path)
+        return {"path": path, "canonical_uri": base + path, "mime_type": mime,
+                "bytes": os.path.getsize(full), "sha256": digest(full)}
+
+    manifest = {
+        "schema": "arkaya-get-manifest/1",
+        "record": ns["title"],
+        "namespace": ns["path"],
+        "as_of": RELEASE_DATE,
+        "sequence": sequence,
+        "canonical_uri": base,
+        "provenance_claim": DISCLOSURE_PROVENANCE_CLAIM,
+        "builder": builder_block(),
+        "registry": {"path": "records.py", "sha256": digest(records.__file__)},
+        "build_parameters": {
+            "built_at": now,
+            "python": sys.version.split()[0],
+            "platform": platform.platform(),
+            "PVR_RELEASE_DATE": RELEASE_DATE,
+            "sequence": sequence,
+            "date_mismatch_reason": date_reason,
+            "test_input": test_input,
+        },
+        "inputs": [validated[e["src"]] | {"version": e["version"]} for e in entries],
+        "generated": [
+            {"path": "index.html", "generated_from": "index.json", "source_sha256": index_sha,
+             "sha256": digest(os.path.join(out, "index.html")),
+             "relation": "rendered by builder"},
+        ],
+        "not_bit_reproducible": {
+            "paths": ["manifest.json", "manifest.json.sha256"],
+            "reason": "the manifest carries built_at and the platform; its sidecar digests "
+                      "the manifest",
+        },
+        "objects": [dict(obj(r["entry_url"], r["mime_type"]), version=r["version"],
+                         status=r["status"]) for r in rows]
+                   + [obj("index.json", "application/json"), obj("index.html", "text/html")],
+    }
+    with open(os.path.join(out, "manifest.json"), "w") as f:
+        json.dump(manifest, f, indent=2)
+    manifest_sha = digest(os.path.join(out, "manifest.json"))
+    with open(os.path.join(out, "manifest.json.sha256"), "w") as f:
+        f.write(manifest_sha + "  manifest.json\n")
+    problems = records.get_path_problems(tree(out))
+    if problems:
+        raise BuildError("GET_PATH", "; ".join(problems))
+    return index, manifest, manifest_sha, index_sha
+
+
+BUILDERS = {"disclosures": build_disclosures, "get": build_get}
+
+
 def root_pointer():
     """The deploy root page. It links every record and is part of none."""
     e = html.escape
@@ -613,20 +962,63 @@ def build():
     release_dir, name, meta_path, replaced = release_target()
     date_reason = validate_date(now_dt.date().isoformat())
     charter_src, charter_marker = validate_charter_source()
-    reg = validate_registration()
-    validated, test_input = validate_disclosure_inputs(reg)
-    ns = records.DISCLOSURES
-    first_ledger = load_ledger(os.path.join(HERE, ns["first_publication_ledger"]))
-    index_ledger = load_ledger(os.path.join(HERE, ns["index_ledger"]))
-    sequence = disclosure_sequence(index_ledger)
-    dates, newly = {}, []
-    for e in reg["entries"]:
-        v = e["version"]
-        if v in first_ledger["versions"]:
-            dates[v] = first_ledger["versions"][v]["first_published"]
-        else:
-            dates[v] = RELEASE_DATE
-            newly.append(v)
+    validate_carry_registration()
+    plans, test_input = [], False
+    for ns in records.NAMESPACES:
+        if ns["mode"] != "built":
+            continue
+        # Carrying proves historical identity, not the present GET registration.
+        if ns["name"] == "get":
+            reg = validate_registration(ns)
+            validated, ns_test_input = validate_inputs(ns, reg)
+            test_input = test_input or ns_test_input
+        if ns["name"] in records.CARRY_REGISTRATION:
+            # Only the latest published record may be carried: an earlier
+            # publication proves byte for byte and would still serve a
+            # superseded index. Where nothing is published yet, the identity
+            # proof below refuses with its own reasons.
+            _, latest = records.latest_published(ns)
+            problems = records.latest_carry_problems(ns) if latest is not None else []
+            if problems:
+                raise BuildError(
+                    "CARRY",
+                    f"the {ns['name']} record registered as carried forward is not the latest "
+                    f"published {ns['name']} record, so nothing was built: "
+                    + "; ".join(problems))
+            problems, source = records.carried_source_problems(ns)
+            if problems:
+                raise BuildError(
+                    "CARRY_IDENTITY",
+                    f"the {ns['name']} record registered as carried forward is not the "
+                    f"record its release published; it is carried, never rebuilt or altered, "
+                    f"so nothing was built: " + "; ".join(problems))
+            if ns["name"] == "get":
+                problems = records.get_record_registration_problems(source["dir"])
+                if problems:
+                    raise BuildError("GET_REGISTRATION", "; ".join(problems))
+            plans.append({"ns": ns, "mode": "carried", "source": source})
+            continue
+        if ns["name"] != "get":
+            reg = validate_registration(ns)
+            validated, ns_test_input = validate_inputs(ns, reg)
+            test_input = test_input or ns_test_input
+        first_ledger = load_ledger(os.path.join(HERE, ns["first_publication_ledger"]))
+        index_ledger = load_ledger(os.path.join(HERE, ns["index_ledger"]))
+        sequence = namespace_sequence(ns, index_ledger)
+        dates, newly = {}, []
+        for e in reg["entries"]:
+            v = e["version"]
+            if v in first_ledger["versions"]:
+                dates[v] = first_ledger["versions"][v]["first_published"]
+            else:
+                dates[v] = RELEASE_DATE
+                newly.append(v)
+        plans.append({"ns": ns, "mode": "built", "reg": reg, "validated": validated,
+                      "test_input": ns_test_input, "sequence": sequence, "dates": dates,
+                      "newly": newly})
+    if not any(p["mode"] == "built" for p in plans):
+        raise BuildError("REGISTRY", "every built namespace is registered as carried forward; "
+                                     "the release would publish nothing new")
     now = now_dt.isoformat()
 
     # 2. Build the whole release in staging, beside its destination.
@@ -634,11 +1026,17 @@ def build():
     if os.path.exists(staging):
         shutil.rmtree(staging)
     os.makedirs(staging)
+    built = {}
     try:
         carry_charter(charter_src, os.path.join(staging, records.CHARTER["path"]))
-        d_index, d_manifest, d_manifest_sha, d_index_sha = build_disclosures(
-            os.path.join(staging, ns["path"]), reg, validated, dates, sequence, now,
-            date_reason, test_input)
+        for p in plans:
+            out = os.path.join(staging, p["ns"]["path"])
+            if p["mode"] == "carried":
+                carry_namespace(p["ns"], p["source"], out)
+            else:
+                built[p["ns"]["name"]] = BUILDERS[p["ns"]["name"]](
+                    out, p["reg"], p["validated"], p["dates"], p["sequence"], now,
+                    date_reason, p["test_input"])
         with open(os.path.join(staging, "index.html"), "w") as f:
             f.write(root_pointer())
         membership = set(os.listdir(staging))
@@ -665,16 +1063,65 @@ def build():
         if os.path.exists(staging):
             shutil.rmtree(staging)
 
-    # 4. Prove the Charter again where it now stands, before freezing.
+    # 4. Prove the Charter, and every record carried forward, again where it now
+    #    stands, before freezing.
     problems = records.charter_record_problems(os.path.join(release_dir, "charter"))
     if problems:
         shutil.rmtree(release_dir)
         raise BuildError("CHARTER_IDENTITY", "after promotion the Charter is not the published "
                                              "Charter; the release was removed: "
                                              + "; ".join(problems))
+    for p in plans:
+        if p["mode"] != "carried":
+            continue
+        problems = records.carried_record_problems(
+            os.path.join(release_dir, p["ns"]["path"]), p["ns"],
+            p["source"]["manifest_sha256"], p["source"]["index_sha256"])
+        if problems:
+            shutil.rmtree(release_dir)
+            raise BuildError("CARRY_IDENTITY", f"after promotion the carried {p['ns']['name']} "
+                                               f"record is not the published record; the "
+                                               f"release was removed: " + "; ".join(problems))
 
     # 5. Freeze. The marker lives outside the release directory.
     charter_index = os.path.join(release_dir, "charter", "index.json")
+    namespaces = {
+        "charter": {
+            "mode": "carried",
+            "path": records.CHARTER["path"],
+            "carried_from_release": records.CHARTER["carried_from_release"],
+            "sequence": records.CHARTER["published_sequence"],
+            "canonical_uri": records.CHARTER["canonical_uri"],
+            "manifest_sha256": records.CHARTER["published_manifest_sha256"],
+            "index_sha256": digest(charter_index),
+            "versions_awaiting_first_publication": [],
+        },
+    }
+    for p in plans:
+        ns = p["ns"]
+        if p["mode"] == "carried":
+            namespaces[ns["name"]] = {
+                "mode": "carried",
+                "path": ns["path"],
+                "carried_from_release": p["source"]["release"],
+                "sequence": p["source"]["sequence"],
+                "canonical_uri": ns["canonical_uri"],
+                "manifest_sha256": p["source"]["manifest_sha256"],
+                "index_sha256": p["source"]["index_sha256"],
+                "versions_awaiting_first_publication": [],
+            }
+        else:
+            _, manifest, manifest_sha, index_sha = built[ns["name"]]
+            namespaces[ns["name"]] = {
+                "mode": "built",
+                "path": ns["path"],
+                "sequence": p["sequence"],
+                "canonical_uri": ns["canonical_uri"],
+                "manifest_sha256": manifest_sha,
+                "index_sha256": index_sha,
+                "builder": manifest["builder"],
+                "versions_awaiting_first_publication": p["newly"],
+            }
     meta = {
         "schema": "arkaya-release/2",
         "release_dir": name,
@@ -682,42 +1129,21 @@ def build():
         "built_at": now,
         "canonical_root": records.CANONICAL_ROOT,
         "root_pointer_sha256": digest(os.path.join(release_dir, "index.html")),
-        "release_builder": d_manifest["builder"],
-        "registry_sha256": d_manifest["registry"]["sha256"],
+        "release_builder": builder_block(),
+        "registry_sha256": digest(records.__file__),
         "date_mismatch_reason": date_reason,
         "test_input": test_input,
-        "namespaces": {
-            "charter": {
-                "mode": "carried",
-                "path": records.CHARTER["path"],
-                "carried_from_release": records.CHARTER["carried_from_release"],
-                "sequence": records.CHARTER["published_sequence"],
-                "canonical_uri": records.CHARTER["canonical_uri"],
-                "manifest_sha256": records.CHARTER["published_manifest_sha256"],
-                "index_sha256": digest(charter_index),
-                "versions_awaiting_first_publication": [],
-            },
-            "disclosures": {
-                "mode": "built",
-                "path": ns["path"],
-                "sequence": sequence,
-                "canonical_uri": ns["canonical_uri"],
-                "manifest_sha256": d_manifest_sha,
-                "index_sha256": d_index_sha,
-                "builder": d_manifest["builder"],
-                "versions_awaiting_first_publication": newly,
-            },
-        },
+        "namespaces": namespaces,
         "published": False,
         "state": "frozen release candidate; not deployed, not published",
     }
     save_json(meta_path, meta)
-    return meta, d_index, d_manifest, release_dir
+    return meta, release_dir
 
 
 if __name__ == "__main__":
     try:
-        meta, idx, man, release_dir = build()
+        meta, release_dir = build()
     except BuildError as exc:
         print(f"BUILD REFUSED {exc}")
         print("Nothing was deleted or replaced. Any existing release is intact.")
@@ -730,7 +1156,11 @@ if __name__ == "__main__":
         print("TEST INPUT     built from a synthetic test input; never publishable")
     for n, d in meta["namespaces"].items():
         print(f"  {n:<12} {d['mode']:<8} sequence {d['sequence']}  "
-              f"manifest {d['manifest_sha256'][:16]}…")
+              f"manifest {d['manifest_sha256'][:16]}…"
+              + (f"  from {d['carried_from_release']}/" if d["mode"] == "carried" else ""))
     print(f"  charter carried byte-identical from "
           f"{meta['namespaces']['charter']['carried_from_release']}/charter/; "
           f"no first-publication dates change")
+    if records.get_absent():
+        print("  get          absent   GET_REGISTRATION = ABSENT; no /get/ record in this "
+              "release")

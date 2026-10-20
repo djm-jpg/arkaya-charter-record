@@ -44,6 +44,21 @@ identity check of its own, in both modes: the served Charter manifest must hash
 to the PUBLISHED digest registered in `records.py`, and every served Charter
 object must be the published object. A venue with the Charter absent or altered,
 or with any namespace failing, is not approved.
+
+19 October 2026. The GET schema record (/get/) is verified like every built
+record, and in addition the SHA-256 and byte count of each SERVED schema file
+are compared with the GET registration in `records.py`. A built record the
+release carries forward (CARRY REGISTRATION) is also checked against its
+publication: the local and served manifests must hash to the registered
+published digest, which the namespace's own index ledger must record; the carry
+must name the latest published release of that record, and the served index
+must be the latest published index, byte for byte. The
+reserved paths /get/1.0 and /get/1.0/ must not return 200; their status is
+recorded. The GET record is optional: with GET_REGISTRATION = ABSENT in
+`records.py` the release has no GET namespace and no GET record check is
+required, but the reserved-path check still runs, and the evidence lists the
+namespace under "absent_namespaces". And every script now reads `records.py` from source, never from a
+bytecode cache (see `_registry_from_source`).
 """
 
 import hashlib
@@ -57,7 +72,31 @@ from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import records  # noqa: E402
+
+
+def _registry_from_source(here):
+    """records.py compiled from its SOURCE on every run, never from a bytecode cache.
+
+    Found 19 October 2026: Python reuses a cached records.cpython-*.pyc while the
+    source's size and whole-second modification time are unchanged. A
+    registration rewritten within one second with a digest of the same length
+    (as a test does, and as any scripted edit can) was then read from the stale
+    cache: the live verifier compared the served GET bytes with the OLD
+    registered digest and passed, while the release recorded the digest of the
+    new file. The registry decides what is built, gated, verified and recorded,
+    so it is never taken from a cache.
+    """
+    import types
+    path = os.path.join(here, "records.py")
+    module = types.ModuleType("records")
+    module.__file__ = path
+    sys.modules["records"] = module
+    with open(path, "rb") as f:
+        exec(compile(f.read(), path, "exec"), module.__dict__)
+    return module
+
+
+records = _registry_from_source(HERE)
 
 # Where evidence is written. The override exists so the multi-namespace tests do
 # not leave rehearsal evidence in the working tree; the default is unchanged.
@@ -72,7 +111,14 @@ EXPECTED_TYPE = {
     "application/json": "application/json",
     "text/html": "text/html",
     "text/markdown": "text/markdown",
+    "application/schema+json": "application/schema+json",
 }
+
+# A served type also accepted for a registered media type, and recorded as such.
+# A static host serves a .json file as application/json unless configured
+# otherwise; the GET schema's registered type is application/schema+json. Which
+# of the two the venue must serve is an operator decision (see the change note).
+ALSO_ACCEPTED = {"application/schema+json": ("application/json",)}
 
 INTERNAL = ("build_publication_set.py", "package.py", "record_publication.py",
             "README_source.md", "first_publication.json", "published_indexes.json",
@@ -273,8 +319,10 @@ def verify_record(chk, base, prefix, root, manifest, local_manifest_sha, index_h
         chk.record(f"{prefix}bytes {o['path']}", len(r["body"]) == o["bytes"],
                    f"manifest {o['bytes']} served {len(r['body'])}")
         want = EXPECTED_TYPE.get(o["mime_type"])
-        chk.record(f"{prefix}content-type {o['path']}", ctype == want,
-                   f"expected {want}, served {ctype or 'none'}")
+        alternative = ctype in ALSO_ACCEPTED.get(o["mime_type"], ())
+        chk.record(f"{prefix}content-type {o['path']}", ctype == want or alternative,
+                   f"expected {want}, served {ctype or 'none'}"
+                   + (" (accepted alternative)" if alternative else ""))
 
     # 5. A path that must NOT exist. A host answering everything with a generic
     #    page makes every retrieval check meaningless.
@@ -323,6 +371,88 @@ def verify_charter_identity(chk, base, served, local_manifest_sha, served_manife
                 else "no published manifest to compare against"))
     return published is not None and not wrong and local_manifest_sha == want \
         and served_manifest_sha == want
+
+
+def verify_carried_identity(chk, prefix, ns, marked, local_sha, served_manifest_sha,
+                            served=None):
+    """A built record carried forward: is what is held and served the published record?
+
+    Checked against the published manifest digest registered in `records.py`
+    and recorded in the namespace's own index ledger, not only against the
+    local release, so a carried record altered consistently still fails here.
+    """
+    c = records.CARRY_REGISTRATION.get(ns["name"]) or {}
+    want = c.get("published_manifest_sha256")
+    seq = c.get("published_sequence")
+    ledger_sha = None
+    path = os.path.join(HERE, ns["index_ledger"])
+    if os.path.isfile(path):
+        with open(path) as f:
+            ledger_sha = ((json.load(f).get("versions") or {}).get(str(seq)) or {}).get(
+                "manifest_sha256")
+    chk.record(f"{prefix}carried: registered as carried from {marked.get('carried_from_release')}",
+               bool(want) and c.get("carried_from_release") == marked.get("carried_from_release")
+               and seq == marked.get("sequence") and marked.get("manifest_sha256") == want,
+               f"registered {str(want)[:16]}… sequence {seq}, marker "
+               f"{str(marked.get('manifest_sha256'))[:16]}… sequence {marked.get('sequence')}")
+    chk.record(f"{prefix}carried: the index ledger records the published manifest",
+               bool(want) and ledger_sha == want,
+               f"{ns['index_ledger']} sequence {seq}: {str(ledger_sha)[:16]}…")
+    chk.record(f"{prefix}carried: local manifest is the published manifest",
+               bool(want) and local_sha == want,
+               f"published {str(want)[:16]}… local {str(local_sha)[:16]}…")
+    chk.record(f"{prefix}carried: served manifest is the published manifest",
+               bool(want) and served_manifest_sha == want,
+               f"published {str(want)[:16]}… served {str(served_manifest_sha)[:16]}…")
+    # Only the latest published record may be carried, and the index served
+    # must be the latest published index, byte for byte.
+    latest_problems, latest = records.latest_published(ns)
+    carry_problems = records.latest_carry_problems(ns)
+    chk.record(f"{prefix}carried: from the latest published {ns['name']} release",
+               not carry_problems,
+               "; ".join(carry_problems) or
+               f"{latest['release']}, sequence {latest['sequence']}")
+    served_index = (served or {}).get("index.json") or {}
+    source_sha = None
+    if latest is not None:
+        source = os.path.join(latest["dir"], "index.json")
+        if os.path.isfile(source):
+            with open(source, "rb") as f:
+                source_sha = hashlib.sha256(f.read()).hexdigest()
+    want_index = latest["index_sha256"] if latest else None
+    chk.record(f"{prefix}carried: served index is the latest published index",
+               not latest_problems and bool(want_index) and source_sha == want_index
+               and served_index.get("sha256") == want_index,
+               f"latest {str(want_index)[:16]}… "
+               f"({latest['release'] if latest else 'none'}), served "
+               f"{str(served_index.get('sha256'))[:16]}…")
+
+
+def verify_get_registration(chk, prefix, served):
+    """Each GET schema file: the SHA-256 of the SERVED bytes against the registration.
+
+    The manifest check above compares the served bytes with the frozen manifest.
+    This compares them with what the operator registered, so a manifest that
+    drifted from the registration cannot vouch for a different file.
+    """
+    problems = records.get_registration_problems()
+    chk.record(f"{prefix}registration valid", not problems,
+               "; ".join(problems) or "complete present GET registration")
+    if problems:
+        return
+    reg = records.GET_REGISTRATION
+    entries = reg.get("entries") if isinstance(reg.get("entries"), list) else []
+    if not entries:
+        chk.record(f"{prefix}registration present", False,
+                   f"GET_REGISTRATION is {records.GET_REGISTRATION!r}")
+    for e in entries:
+        path = f"{e.get('version')}/{e.get('src')}"
+        got = served.get(path)
+        ok = got is not None and got["sha256"] == e.get("sha256") \
+            and got["bytes"] == e.get("bytes")
+        chk.record(f"{prefix}registered digest {path}", ok,
+                   f"registered {str(e.get('sha256'))[:16]}… {e.get('bytes')} bytes, served "
+                   + (f"{got['sha256'][:16]}… {got['bytes']} bytes" if got else "nothing"))
 
 
 def check_internal(chk, bases, apex_base, release_name):
@@ -574,18 +704,45 @@ def main_multi(argv, release_name, args, meta):
             if manifest.get("canonical_uri") != ns["canonical_uri"]:
                 blockers.append(f"{name}: the frozen manifest names "
                                 f"{manifest.get('canonical_uri')}, the registry {ns['canonical_uri']}")
+        marked = marker_ns.get(name) or {}
         if name == "charter":
             identity = verify_charter_identity(chk, ns_base, served, local_sha,
                                                served_manifest_sha)
+        elif marked.get("mode") == "carried":
+            verify_carried_identity(chk, prefix, ns, marked, local_sha, served_manifest_sha,
+                                    served)
+        if name == "get":
+            registration = records.get_record_registration_problems(
+                os.path.join(HERE, release_name, ns["path"]))
+            chk.record(f"{prefix}registration matches the frozen record", not registration,
+                       "; ".join(registration) or "the present GET inputs and record agree")
+            verify_get_registration(chk, prefix, served)
         served_all[name] = served
         evidence_ns[name] = {
-            "mode": ns["mode"],
+            "mode": marked.get("mode") or ns["mode"],
             "base": ns_base,
             "canonical_uri": ns["canonical_uri"],
             "sequence": (marker_ns.get(name) or {}).get("sequence"),
             "manifest_sha256": local_sha,
             "served_manifest_sha256": served_manifest_sha,
         }
+        if marked.get("mode") == "carried" and name != "charter":
+            evidence_ns[name]["carried_from_release"] = marked.get("carried_from_release")
+
+    # 6a. The reserved GET paths. The builder never produces /get/1.0 or
+    #     /get/1.0/; the venue must not serve them either. Any status but 200
+    #     passes (404, or no route at all); redirects are followed, so a
+    #     redirect that lands on a 200 fails. The status is recorded. This
+    #     protection runs whether or not the release has a GET namespace: a
+    #     release with GET_REGISTRATION = ABSENT must not serve them either.
+    for reserved in records.RESERVED_GET_VERSIONS:
+        for suffix in ("", "/"):
+            r = fetch(f"{base}{records.GET['path']}/{reserved}{suffix}")
+            chk.record(f"[get] reserved path not served: /{records.GET['path']}/{reserved}"
+                       f"{suffix}", r.get("status") != 200,
+                       f"status {r.get('status')}"
+                       + (f", final URL {r['final_url']}" if r.get("status") else "")
+                       + (f" ({r['error']})" if r.get("error") else ""))
 
     # 7. Internal files must not be reachable, from any level.
     check_internal(chk, bases, base, release_name)
@@ -639,6 +796,8 @@ def main_multi(argv, release_name, args, meta):
         "root_pointer_sha256": meta.get("root_pointer_sha256"),
         "served_root_pointer_sha256": served_pointer_sha,
         "namespaces": evidence_ns,
+        "absent_namespaces": [ns["name"] for ns in records.ALL_NAMESPACES
+                              if ns not in records.NAMESPACES],
         "charter_identity": {
             "published_manifest_sha256": records.CHARTER["published_manifest_sha256"],
             "local_manifest_sha256": evidence_ns["charter"]["manifest_sha256"],

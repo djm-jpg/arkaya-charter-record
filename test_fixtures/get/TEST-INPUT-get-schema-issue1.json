@@ -1,0 +1,6 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "ARKAYA-TEST-INPUT. Synthetic GET schema fixture for the test suite only. It is not the GET schema and must never be registered in the shipped records.py or published. Issue 1 deliberately carries a UTF-8 byte-order mark, CRLF line endings, a non-ASCII character (é) and no final newline, so that any re-encoding is detected.",
+  "title": "TEST INPUT synthetic GET schema, issue 1",
+  "type": "object"
+}

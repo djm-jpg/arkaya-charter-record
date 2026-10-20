@@ -42,7 +42,15 @@ MULTIPLE RECORDS. A release built by `build_release.py` (freeze marker schema
        a release missing it, or carrying an altered one, is refused
     3. every built namespace is frozen, matches its own manifest with nothing
        unnamed, agrees with its freeze-marker entry, and its builder, registry
-       and registered inputs are the shipped files
+       and registered inputs are the shipped files; a GET schema file must be
+       the registered bytes, and nothing may sit at get/1.0 (GET_PATH); a
+       built namespace the release carries forward (CARRY REGISTRATION in
+       records.py) is instead proved byte for byte against its publication
+       (CARRY_IDENTITY), as the Charter is, and must be the latest published
+       release of that record, its index byte for byte the latest published
+       index (CARRY). With GET_REGISTRATION = ABSENT the
+       release has no GET namespace and no GET check is required; a get/
+       directory in such a release is refused (LAYOUT)
     4. the Charter's acceptance-suite evidence and rebuild comparison are
        re-derived exactly as for a single-record release; they apply because
        the carried Charter is the manifest they were taken against
@@ -62,7 +70,32 @@ sys.path.insert(0, HERE)
 
 from expectations import (EXPECTED, REQUIRED_RUNS, evaluate_run,   # noqa: E402
                           evaluate_rebuild, parse_transcript, tree, Unreadable)
-import records  # noqa: E402
+
+
+def _registry_from_source(here):
+    """records.py compiled from its SOURCE on every run, never from a bytecode cache.
+
+    Found 19 October 2026: Python reuses a cached records.cpython-*.pyc while the
+    source's size and whole-second modification time are unchanged. A
+    registration rewritten within one second with a digest of the same length
+    (as a test does, and as any scripted edit can) was then read from the stale
+    cache: the live verifier compared the served GET bytes with the OLD
+    registered digest and passed, while the release recorded the digest of the
+    new file. The registry decides what is built, gated, verified and recorded,
+    so it is never taken from a cache.
+    """
+    import types
+    path = os.path.join(here, "records.py")
+    module = types.ModuleType("records")
+    module.__file__ = path
+    sys.modules["records"] = module
+    with open(path, "rb") as f:
+        exec(compile(f.read(), path, "exec"), module.__dict__)
+    return module
+
+
+records = _registry_from_source(HERE)
+
 RUNS = os.path.join(HERE, "verification", "runs")
 PRODUCTION_RECORD = os.path.join(HERE, "verification", "PRODUCTION_RECORD.md")
 
@@ -785,7 +818,9 @@ def check_multi_release(meta):
     if not ident:
         manifests["charter"] = load(os.path.join(c_record, "manifest.json"), "Charter manifest")
 
-    # 3. Every built namespace against its own manifest, marker and sources.
+    # 3. Every built namespace against its own manifest, marker and sources, or,
+    #    where the release carries it forward, against its publication.
+    problems += [f"[REGISTRY] {p}" for p in records.carry_registration_problems()]
     for ns in records.NAMESPACES:
         if ns["mode"] != "built":
             continue
@@ -793,6 +828,25 @@ def check_multi_release(meta):
         m = marker_ns.get(ns["name"])
         record = os.path.join(RELEASE_DIR, ns["path"])
         manifest_path = os.path.join(record, "manifest.json")
+        if (m or {}).get("mode") == "carried" or ns["name"] in records.CARRY_REGISTRATION:
+            if ns["name"] == "get":
+                problems += records.get_record_registration_problems(record)
+            carried = records.carried_namespace_problems(ns, record, m)
+            problems += [f"[CARRY_IDENTITY] {p}" for p in carried]
+            # Only the latest published record may be carried, and the index
+            # this release serves must be that record's index, byte for byte.
+            latest = (records.latest_carry_problems(ns)
+                      + records.latest_index_problems(ns, record))
+            problems += [f"[CARRY] {p}" for p in latest]
+            if not carried and not latest:
+                manifests[ns["name"]] = load(manifest_path, f"{ns['name']} manifest")
+            continue
+        if ns["name"] == "get":
+            on_disk = set()
+            for dirpath, _, names in os.walk(record):
+                for n in names:
+                    on_disk.add(os.path.relpath(os.path.join(dirpath, n), record))
+            problems += [f"[GET_PATH] {p}" for p in records.get_path_problems(on_disk)]
         if not m or not os.path.isfile(manifest_path):
             problems.append(f"[{ns['name'].upper()}] {where}manifest.json or its freeze-marker "
                             f"entry is missing")
@@ -835,18 +889,26 @@ def check_multi_release(meta):
             problems.append(f"{where}the shipped registry records.py hashes to "
                             f"{sha(registry)[:16]}…, not the registry this release was built "
                             f"from. Rebuild and refreeze")
-        reg_problems = records.registration_problems()
+        reg_problems = records.registration_problems_for(ns["name"])
         if reg_problems:
-            problems.append(f"[REGISTRY] the disclosure carrier is not registered: "
+            what = "the disclosure carrier" if ns["name"] == "disclosures" else \
+                f"the {ns['name']} record"
+            problems.append(f"[REGISTRY] {what} is not registered: "
                             f"{'; '.join(reg_problems)}")
         else:
-            registered_inputs = sorted(
-                (f"{ns['inputs']}/{e['src']}", e["sha256"], e["bytes"])
-                for e in records.DISCLOSURE_REGISTRATION["entries"])
             recorded_inputs = sorted((i["path"], i["sha256"], i["bytes"])
                                      for i in manifest.get("inputs", []))
-            if registered_inputs != recorded_inputs:
+            if records.registered_inputs(ns["name"]) != recorded_inputs:
                 problems.append(f"{where}the manifest's inputs are not the registered inputs")
+            if ns["name"] == "get":
+                # Each schema file is served exactly as registered: the bytes on
+                # disk, not only the manifest, against the registration.
+                for e in records.GET_REGISTRATION["entries"]:
+                    p = os.path.join(record, e["version"], e["src"])
+                    if not os.path.isfile(p) or sha(p) != e["sha256"] \
+                            or os.path.getsize(p) != e["bytes"]:
+                        problems.append(f"{where}{e['version']}/{e['src']}: not the registered "
+                                        f"bytes ({e['sha256'][:16]}…, {e['bytes']} bytes)")
         for i in manifest.get("inputs", []):
             p = os.path.join(HERE, i["path"])
             if not os.path.isfile(p):
@@ -890,6 +952,16 @@ def generate_release_record(meta, manifests, results):
         if ns["mode"] != "built" or ns["name"] not in manifests:
             continue
         m = manifests[ns["name"]]
+        d = meta["namespaces"].get(ns["name"]) or {}
+        if d.get("mode") == "carried":
+            sections.append(f"""### `/{ns['path']}/`, carried forward
+
+Carried byte-identical from `{d['carried_from_release']}/{ns['path']}/`, which published it at
+sequence {d['sequence']}. Its manifest hashes to `{d['manifest_sha256']}`, the digest registered
+in `records.py` and recorded in `{ns['index_ledger']}` and its snapshot
+`{ns['snapshots']}/{d['sequence']}/`, and every object matches it with nothing else present. It
+was not rebuilt, and publishing this release writes none of its ledgers.""")
+            continue
         objects = "\n".join(f"| `{o['path']}` | {o['mime_type']} | `{o['sha256']}` | "
                              f"{o['bytes']:,} |" for o in m["objects"])
         inputs = "\n".join(f"| {i['version']} | `{i['path']}` | `{i['sha256']}` | {i['bytes']:,} |"
@@ -980,8 +1052,15 @@ def main_multi(argv, meta):
     for ns in records.NAMESPACES:
         if ns["mode"] == "built":
             d = meta["namespaces"][ns["name"]]
+            if d.get("mode") == "carried":
+                print(f"  {ns['name']:<14} carried from {d['carried_from_release']}, sequence "
+                      f"{d['sequence']}, published manifest {d['manifest_sha256'][:16]}…, "
+                      f"byte-identical")
+                continue
             print(f"  {ns['name']:<14} built, sequence {d['sequence']}, manifest "
                   f"{d['manifest_sha256'][:16]}…, builder, registry and inputs match")
+    if records.get_absent():
+        print("  get            absent (GET_REGISTRATION = ABSENT); no GET check required")
     if meta.get("test_input"):
         print("  TEST INPUT     this release was built from a synthetic test input and can "
               "never be published")
@@ -1018,9 +1097,12 @@ def main_multi(argv, meta):
     if check_only:
         return 0
     contents = list(CONTENTS)
-    carried_from = records.CHARTER["carried_from_release"]
-    if carried_from not in contents:
-        contents.append(carried_from)
+    carried_from = [records.CHARTER["carried_from_release"]] + sorted(
+        d["carried_from_release"] for n, d in meta["namespaces"].items()
+        if n != "charter" and d.get("mode") == "carried")
+    for rel in carried_from:
+        if rel not in contents:
+            contents.append(rel)
     write_package(f"OPS_Record_Release_{RELEASE_NAME}_{meta['release_date']}", contents)
     return 0
 

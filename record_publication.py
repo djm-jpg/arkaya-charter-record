@@ -67,6 +67,16 @@ disclosure record (see `records.py`). Recording such a release is per namespace:
     publication's snapshot, which holds both manifests and the live evidence.
   - The evidence must be an approved multi-namespace verification that found
     the served Charter identical to the published Charter.
+  - Since 19 October 2026 a BUILT namespace may also be carried forward by a
+    release (CARRY REGISTRATION in `records.py`; "carried" in the freeze
+    marker). It is recorded exactly as the Charter is: carried unchanged at its
+    published sequence, its own ledgers and snapshots unwritten (checked byte
+    for byte before and after), its index, manifest and sidecar held under
+    `carried/<path>/` in each new snapshot. The GET schema record is built and
+    recorded like the disclosure record, in `ledgers/get/`. It is optional:
+    with GET_REGISTRATION = ABSENT the release has no GET namespace, nothing
+    is written under `ledgers/get/`, and a freeze marker naming `get` is
+    refused (NAMESPACES).
 
 What it writes, for a single-record release:
 
@@ -90,7 +100,31 @@ from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import records  # noqa: E402
+
+
+def _registry_from_source(here):
+    """records.py compiled from its SOURCE on every run, never from a bytecode cache.
+
+    Found 19 October 2026: Python reuses a cached records.cpython-*.pyc while the
+    source's size and whole-second modification time are unchanged. A
+    registration rewritten within one second with a digest of the same length
+    (as a test does, and as any scripted edit can) was then read from the stale
+    cache: the live verifier compared the served GET bytes with the OLD
+    registered digest and passed, while the release recorded the digest of the
+    new file. The registry decides what is built, gated, verified and recorded,
+    so it is never taken from a cache.
+    """
+    import types
+    path = os.path.join(here, "records.py")
+    module = types.ModuleType("records")
+    module.__file__ = path
+    sys.modules["records"] = module
+    with open(path, "rb") as f:
+        exec(compile(f.read(), path, "exec"), module.__dict__)
+    return module
+
+
+records = _registry_from_source(HERE)
 
 RELEASES = os.path.join(HERE, "releases")
 LEDGER = os.path.join(HERE, "first_publication.json")
@@ -277,6 +311,16 @@ def validate_multi_release(release_dir, meta):
                 manifests[ns["name"]] = load(os.path.join(record, "manifest.json"), "manifest")
             continue
         if not m:
+            continue
+        if m.get("mode") == "carried":
+            if ns["name"] == "get":
+                problems += records.get_record_registration_problems(record)
+            carried = records.carried_namespace_problems(ns, record, m)
+            problems += [f"[CARRY_IDENTITY] {p}" for p in carried]
+            problems += [f"[CARRY] {p}" for p in records.latest_carry_problems(ns)
+                         + records.latest_index_problems(ns, record)]
+            if not carried:
+                manifests[ns["name"]] = load(os.path.join(record, "manifest.json"), "manifest")
             continue
         where = f"{ns['path']}/"
         ns_problems, manifest = validate_record(record, m.get("manifest_sha256"),
@@ -525,9 +569,23 @@ def stage_snapshot(seq, release_dir, meta, meta_path, evidence_path, payload):
 # ------------------------------------------------------ multiple namespaces
 
 def built_namespaces(meta):
-    """The namespaces this release publishes: registered as built, in the marker."""
+    """The namespaces this release publishes: registered as built, built by this release.
+
+    A built namespace the release carries forward is in the marker as
+    "carried" and is not published again: it is recorded as carried, like the
+    Charter, and its ledgers are not written.
+    """
+    marker = meta.get("namespaces") or {}
     return [ns for ns in records.NAMESPACES
-            if ns["mode"] == "built" and ns["name"] in (meta.get("namespaces") or {})]
+            if ns["mode"] == "built" and ns["name"] in marker
+            and marker[ns["name"]].get("mode", "built") == "built"]
+
+
+def carried_namespaces(meta):
+    """Every namespace this release carries: the Charter, and any carried forward."""
+    return [ns for ns in records.NAMESPACES
+            if ns["mode"] == "carried"
+            or ((meta.get("namespaces") or {}).get(ns["name"]) or {}).get("mode") == "carried"]
 
 
 def note_evidence_tag_multi(meta, tag, commit):
@@ -650,7 +708,7 @@ def inspect_multi(meta):
         snap = snapshot_dir(ns, m["sequence"])
         wanted = [*SNAPSHOT_FILES, "release.json", "live_verification.json",
                   "publication.json"] + [f"carried/{c['path']}/{f}"
-                                         for c in records.NAMESPACES if c["mode"] == "carried"
+                                         for c in carried_namespaces(meta)
                                          for f in CARRIED_SNAPSHOT]
         missing = [f for f in wanted if not os.path.isfile(os.path.join(snap, f))]
         if missing:
@@ -670,7 +728,7 @@ def inspect_multi(meta):
     return "incomplete", outstanding
 
 
-def stage_snapshot_multi(ns, seq, release_dir, meta_path, evidence_path, payload):
+def stage_snapshot_multi(ns, seq, release_dir, meta_path, evidence_path, payload, meta=None):
     """One namespace's snapshot, holding every record's manifest and the evidence.
 
     Staged beside its destination and moved in atomically, as for the Charter.
@@ -681,10 +739,11 @@ def stage_snapshot_multi(ns, seq, release_dir, meta_path, evidence_path, payload
     staging = tempfile.mkdtemp(dir=parent, prefix=f".staging-{seq}-")
     try:
         pairs = [(os.path.join(record, n), n) for n in SNAPSHOT_FILES]
-        for c in records.NAMESPACES:
-            if c["mode"] == "carried":
-                pairs += [(os.path.join(release_dir, c["path"], n), f"carried/{c['path']}/{n}")
-                          for n in CARRIED_SNAPSHOT]
+        carried = carried_namespaces(meta) if meta is not None else [
+            c for c in records.NAMESPACES if c["mode"] == "carried"]
+        for c in carried:
+            pairs += [(os.path.join(release_dir, c["path"], n), f"carried/{c['path']}/{n}")
+                      for n in CARRIED_SNAPSHOT]
         for src, rel in pairs:
             dst = os.path.join(staging, rel)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -723,6 +782,24 @@ def charter_ledger_bytes():
     return out
 
 
+def carried_forward_ledger_bytes(meta):
+    """Every carried-forward namespace's ledgers and snapshots, to prove none was written."""
+    out = {}
+    for ns in carried_namespaces(meta):
+        if ns["mode"] == "carried":
+            continue
+        for rel in (ns["first_publication_ledger"], ns["index_ledger"]):
+            p = os.path.join(HERE, rel)
+            out[rel] = sha(p) if os.path.isfile(p) else None
+        snaps = os.path.join(HERE, ns["snapshots"])
+        if os.path.isdir(snaps):
+            for dirpath, _, names in os.walk(snaps):
+                for n in names:
+                    p = os.path.join(dirpath, n)
+                    out[os.path.relpath(p, HERE)] = sha(p)
+    return out
+
+
 def record_multi(a, meta, meta_path, release_dir):
     """Record a multi-namespace publication. The Charter is carried, never recorded anew."""
     problems, manifests = validate_release(release_dir, meta)
@@ -742,6 +819,18 @@ def record_multi(a, meta, meta_path, release_dir):
     if not c_entry or c_entry.get("manifest_sha256") != c["published_manifest_sha256"]:
         problems.append(f"[CHARTER_IDENTITY] {c['index_ledger']} does not record the carried "
                         f"Charter at sequence {c['published_sequence']}")
+    # So must every built record carried forward, in its own ledger.
+    for ns in carried_namespaces(meta):
+        if ns["mode"] == "carried":
+            continue
+        m = meta["namespaces"][ns["name"]]
+        led = load_or_empty(os.path.join(HERE, ns["index_ledger"]), "")
+        entry = led["versions"].get(str(m["sequence"]))
+        if not entry or entry.get("manifest_sha256") != m["manifest_sha256"]:
+            problems.append(f"[CARRY_IDENTITY] {ns['index_ledger']} does not record the carried "
+                            f"{ns['name']} record at sequence {m['sequence']}")
+    if not built_namespaces(meta):
+        problems.append("the release publishes no namespace of its own")
 
     state, outstanding = inspect_multi(meta)
     if state == "complete":
@@ -768,6 +857,7 @@ def record_multi(a, meta, meta_path, release_dir):
         return 2
 
     charter_before = charter_ledger_bytes()
+    carried_before = carried_forward_ledger_bytes(meta)
     now = datetime.now(timezone.utc).isoformat()
     cm = meta["namespaces"]["charter"]
     carried = {
@@ -814,6 +904,19 @@ def record_multi(a, meta, meta_path, release_dir):
                     "first_publication_entries": m["versions_awaiting_first_publication"],
                 },
                 "charter": carried,
+                **{c["name"]: {
+                    "state": "carried unchanged",
+                    "carried_from_release": meta["namespaces"][c["name"]]["carried_from_release"],
+                    "sequence": meta["namespaces"][c["name"]]["sequence"],
+                    "manifest_sha256": meta["namespaces"][c["name"]]["manifest_sha256"],
+                    "index_sha256": meta["namespaces"][c["name"]]["index_sha256"],
+                    "first_publication_entries": [],
+                    "ledgers_written": False,
+                    "note": f"The {c['name']} record was carried byte-identical from the release "
+                            f"that published it and verified live as that published record. It "
+                            f"was not published again: its first-publication dates, index ledger "
+                            f"and snapshots are unchanged.",
+                } for c in carried_namespaces(meta) if c["mode"] != "carried"},
             },
             "basis": "recorded from a passing, approved live verification of every namespace "
                      "of the frozen release at the canonical address on the release date, "
@@ -822,7 +925,7 @@ def record_multi(a, meta, meta_path, release_dir):
         }
         snap = snapshot_dir(ns, seq)
         if not os.path.isdir(snap):
-            stage_snapshot_multi(ns, seq, release_dir, meta_path, a.evidence, payload)
+            stage_snapshot_multi(ns, seq, release_dir, meta_path, a.evidence, payload, meta)
         else:
             existing = load(os.path.join(snap, "publication.json"), "partial publication record")
             if existing.get("manifest_sha256") != m["manifest_sha256"]:
@@ -865,6 +968,10 @@ def record_multi(a, meta, meta_path, release_dir):
         print("PUBLICATION INCOMPLETE: a Charter ledger or snapshot changed during recording. "
               "This must not happen; resolve by hand before anything else.")
         return 2
+    if carried_forward_ledger_bytes(meta) != carried_before:
+        print("PUBLICATION INCOMPLETE: a carried-forward record's ledger or snapshot changed "
+              "during recording. This must not happen; resolve by hand before anything else.")
+        return 2
 
     meta["published"] = True
     meta["published_on"] = meta["release_date"]
@@ -888,6 +995,11 @@ def record_multi(a, meta, meta_path, release_dir):
               f"snapshot {ns['snapshots']}/{m['sequence']}/")
     print(f"  charter         carried unchanged at sequence {cm['sequence']}; no Charter "
           f"ledger written, no first-publication date added")
+    for c in carried_namespaces(meta):
+        if c["mode"] != "carried":
+            d = meta["namespaces"][c["name"]]
+            print(f"  {c['name']:<15} carried unchanged from {d['carried_from_release']} at "
+                  f"sequence {d['sequence']}; none of its ledgers written")
     print(f"  release commit  {meta['release_commit']}")
     return 0
 

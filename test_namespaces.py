@@ -9,10 +9,21 @@ nothing already published moves or changes.
 Every guarantee below is exercised by breaking the thing it guards. The gate
 numbering (G2 to G7) is the one the change was specified against.
 
-INPUTS. No real disclosure is an input here. Each sandbox copies the synthetic
-TEST INPUT fixtures from `test_fixtures/disclosures/` and registers their digests
-in the SANDBOX's own copy of `records.py`, in the same single block an operator
-completes at freeze. The repository's `records.py` is never edited by a test.
+INPUTS. No real disclosure or GET schema is an input here. Each sandbox copies
+the synthetic TEST INPUT fixtures from `test_fixtures/disclosures/` and
+`test_fixtures/get/` and registers their digests in the SANDBOX's own copy of
+`records.py`, in the same single blocks an operator completes at freeze. The
+repository's `records.py` is never edited by a test.
+
+The GET namespace and carrying a built record forward (19 October 2026) are
+tested in the classes after G7: TestGetNamespace, TestGetLive,
+TestCarriedForward. Those classes register a synthetic GET issue explicitly.
+Every other sandbox keeps GET_REGISTRATION = ABSENT, as records.py ships it, and
+the GET-absent release is tested across build, gate, live verifier and recorder
+in TestGetAbsent, TestGetAbsentLive and TestGetAbsentRecording.
+TestGetAbsentRegression builds the same disclosure-only release with the
+builder and registry at b4e36d3 and with the current code, and compares them
+byte for byte.
 
 Run: python3 test_namespaces.py
 """
@@ -39,6 +50,10 @@ import records  # noqa: E402
 
 TODAY = datetime.now(timezone.utc).date().isoformat()
 FIXTURES = os.path.join(HERE, "test_fixtures", "disclosures")
+GET_FIXTURES = os.path.join(HERE, "test_fixtures", "get")
+GET_V1 = "1.0.1-test-draft-v1"
+GET_V2 = "1.0.2-test-draft-v2"
+GET_SCHEMA = "application/schema+json"
 PUBLISHED = records.CHARTER["published_manifest_sha256"]
 
 # A release name used only inside test sandboxes.
@@ -107,6 +122,24 @@ def registration_block(entries, slug="test-disclosure",
     return "\n".join(lines)
 
 
+def get_registration_block(entries):
+    lines = ["# BEGIN GET REGISTRATION", "GET_REGISTRATION = {", "    \"entries\": ["]
+    lines += [f"        {e!r}," for e in entries]
+    lines += ["    ],", "}", "# END GET REGISTRATION"]
+    return "\n".join(lines)
+
+
+# The shipped GET block: the release has no GET namespace.
+GET_ABSENT_BLOCK = "# BEGIN GET REGISTRATION\nGET_REGISTRATION = ABSENT\n# END GET REGISTRATION"
+
+# The round-1 placeholder. No longer shipped; refused, never read as absent.
+GET_PLACEHOLDER_BLOCK = get_registration_block(
+    [{"version": records.UNREGISTERED, "src": records.UNREGISTERED,
+      "sha256": records.UNREGISTERED, "bytes": None, "document_date": records.UNREGISTERED,
+      "media_type": GET_SCHEMA, "status": records.UNREGISTERED,
+      "reason": records.UNREGISTERED}])
+
+
 # The shipped placeholder, as records.py carries it until freeze.
 PLACEHOLDER_BLOCK = registration_block(
     [{"version": "v1", "src": records.UNREGISTERED, "sha256": records.UNREGISTERED,
@@ -119,6 +152,9 @@ class Sandbox(unittest.TestCase):
 
     VERSIONS = ("v1",)
     REGISTER = True
+    # The GET record is optional and absent by default, as records.py ships it.
+    # A class testing the GET record registers it explicitly.
+    GET_VERSIONS = ()
 
     def setUp(self):
         self.dir = tempfile.mkdtemp(prefix="ns-test-")
@@ -141,9 +177,16 @@ class Sandbox(unittest.TestCase):
         # the repository holds. Once the real carrier is registered at freeze,
         # it must not leak into a test, and these tests must still pass.
         shutil.rmtree(os.path.join(self.dir, "inputs", "disclosures"), ignore_errors=True)
+        shutil.rmtree(os.path.join(self.dir, "inputs", "get"), ignore_errors=True)
         self.write_registration(PLACEHOLDER_BLOCK)
+        self.write_block("GET REGISTRATION", GET_ABSENT_BLOCK)
+        self.write_carry({})
         if self.REGISTER:
             self.register(self.VERSIONS)
+        # The GET record is registered only where a class asks for it. Without
+        # that, the sandbox keeps GET_REGISTRATION = ABSENT, as shipped.
+        if self.GET_VERSIONS:
+            self.register_get(self.GET_VERSIONS)
 
     def tearDown(self):
         shutil.rmtree(self.dir, ignore_errors=True)
@@ -167,14 +210,38 @@ class Sandbox(unittest.TestCase):
         self.write_registration(registration_block(entries))
 
     def write_registration(self, block):
+        self.write_block("DISCLOSURE REGISTRATION", block)
+
+    def write_block(self, marker, block):
         path = os.path.join(self.dir, "records.py")
         with open(path) as f:
             text = f.read()
-        new = re.sub(r"# BEGIN DISCLOSURE REGISTRATION.*?# END DISCLOSURE REGISTRATION",
-                     lambda m: block, text, flags=re.S)
-        self.assertNotEqual(text, new, "the registration block was not found")
+        new = re.sub(rf"# BEGIN {marker}.*?# END {marker}", lambda m: block, text, flags=re.S)
+        self.assertNotEqual(text, new, f"the {marker} block was not found")
         with open(path, "w") as f:
             f.write(new)
+
+    def register_get(self, versions, **overrides):
+        """Register synthetic GET issues: issue N of the fixtures under each version slug."""
+        inputs = os.path.join(self.dir, "inputs", "get")
+        os.makedirs(inputs, exist_ok=True)
+        entries = []
+        for i, v in enumerate(versions):
+            name = f"TEST-INPUT-get-schema-issue{i + 1}.json"
+            shutil.copyfile(os.path.join(GET_FIXTURES, name), os.path.join(inputs, name))
+            with open(os.path.join(inputs, name), "rb") as f:
+                body = f.read()
+            e = {"version": v, "src": name, "sha256": sha_bytes(body), "bytes": len(body),
+                 "document_date": "2026-10-1" + str(i + 1), "media_type": GET_SCHEMA,
+                 "status": "public draft for comment",
+                 "reason": "Synthetic GET issue for the namespace tests."}
+            e.update(overrides)
+            entries.append(e)
+        self.write_block("GET REGISTRATION", get_registration_block(entries))
+
+    def write_carry(self, carry):
+        self.write_block("CARRY REGISTRATION", "# BEGIN CARRY REGISTRATION\n"
+                         f"CARRY_REGISTRATION = {carry!r}\n# END CARRY REGISTRATION")
 
     def edit_registry(self, old, new):
         path = os.path.join(self.dir, "records.py")
@@ -397,7 +464,8 @@ class TestCharterRemovalRefused(Sandbox):
         self.assert_nothing_built()
 
     def test_a_disclosure_only_registry_is_refused_at_build(self):
-        self.edit_registry("NAMESPACES = (CHARTER, DISCLOSURES)", "NAMESPACES = (DISCLOSURES,)")
+        self.edit_registry("ALL_NAMESPACES = (CHARTER, DISCLOSURES, GET)",
+                           "ALL_NAMESPACES = (DISCLOSURES, GET)")
         r = self.build()
         self.assertEqual(2, r.returncode)
         self.assertIn("[REGISTRY]", r.stdout)
@@ -986,6 +1054,972 @@ class TestNoDisguise(PublicationCase):
         self.assertEqual([], records.registry_problems())
 
 
+# =================================================================== GET
+
+class TestGetNamespace(Sandbox):
+    """The GET schema record: its own namespace, its bytes exactly as registered."""
+
+    GET_VERSIONS = (GET_V1,)
+
+    def get_file(self, name=RELEASE, version=GET_V1, issue=1):
+        return self.rel("get", version, f"TEST-INPUT-get-schema-issue{issue}.json", name=name)
+
+    def test_a_combined_release_builds_the_get_and_disclosure_records(self):
+        self.built()
+        self.assertEqual({"index.html", "charter", "disclosures", "get"},
+                         set(os.listdir(self.rel())))
+        self.assertEqual({"index.json", "index.html", "manifest.json", "manifest.json.sha256",
+                          f"{GET_V1}/TEST-INPUT-get-schema-issue1.json"},
+                         set(tree(self.rel("get"))))
+        meta = self.meta()
+        g, d = meta["namespaces"]["get"], meta["namespaces"]["disclosures"]
+        self.assertEqual(("built", 1, [GET_V1]),
+                         (g["mode"], g["sequence"], g["versions_awaiting_first_publication"]))
+        self.assertEqual(("built", 1, ["v1"]),
+                         (d["mode"], d["sequence"], d["versions_awaiting_first_publication"]))
+        self.assertEqual(sha(self.rel("get", "manifest.json")), g["manifest_sha256"])
+        with open(self.rel("get", "manifest.json.sha256")) as f:
+            self.assertEqual(g["manifest_sha256"], f.read().split()[0])
+        self.assertEqual(tree(os.path.join(self.dir, "publish", "charter")),
+                         tree(self.rel("charter")))
+        r = self.gate()
+        self.assertEqual(0, r.returncode, r.stdout[-3000:] + r.stderr[-2000:])
+        self.assertIn("get            built, sequence 1", r.stdout)
+        check = self.gate("--check")
+        self.assertEqual(0, check.returncode, check.stdout[-3000:])
+
+    def test_the_schema_is_served_with_its_bytes_exactly_as_input(self):
+        self.built()
+        with open(os.path.join(GET_FIXTURES, "TEST-INPUT-get-schema-issue1.json"), "rb") as f:
+            want = f.read()
+        # The fixture is hostile on purpose: a byte-order mark, CRLF line
+        # endings, a non-ASCII character and no final newline.
+        self.assertTrue(want.startswith(b"\xef\xbb\xbf") and b"\r\n" in want
+                        and not want.endswith(b"\n") and "é".encode() in want)
+        with open(self.get_file(), "rb") as f:
+            self.assertEqual(want, f.read(), "the schema bytes changed on the way to be served")
+        man = self.load(RELEASE, "get", "manifest.json")
+        entry = [o for o in man["objects"] if o.get("version") == GET_V1][0]
+        self.assertEqual(f"{GET_V1}/TEST-INPUT-get-schema-issue1.json", entry["path"])
+        self.assertEqual("https://record.arkayarisk.com/get/"
+                         f"{GET_V1}/TEST-INPUT-get-schema-issue1.json", entry["canonical_uri"])
+        self.assertEqual((GET_SCHEMA, sha_bytes(want), len(want)),
+                         (entry["mime_type"], entry["sha256"], entry["bytes"]))
+        idx = self.load(RELEASE, "get", "index.json")
+        self.assertEqual(("public draft for comment", True, TODAY),
+                         (idx["entries"][0]["status"], idx["entries"][0]["is_current"],
+                          idx["entries"][0]["published_to_record"]))
+
+    def test_the_root_pointer_lists_the_get_record(self):
+        self.built()
+        with open(self.rel("index.html")) as f:
+            page = f.read()
+        for ns in ("charter", "disclosures", "get"):
+            self.assertIn(f'href="/{ns}/"', page)
+        self.assertIn(records.GET["title"], page)
+
+    def assert_refused(self, r, *needles):
+        self.assertEqual(2, r.returncode, r.stdout)
+        for n in needles:
+            self.assertIn(n, r.stdout)
+        self.assertFalse(os.path.exists(self.rel()))
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "releases", f"{RELEASE}.json")))
+
+    def test_the_get_placeholder_is_refused(self):
+        self.write_block("GET REGISTRATION", GET_PLACEHOLDER_BLOCK)
+        self.assert_refused(self.build(), "[REGISTRY]", "the GET schema is not registered",
+                            "version slug is 'UNREGISTERED'")
+
+    def test_a_registered_digest_that_does_not_match_is_refused(self):
+        self.register_get((GET_V1,), sha256="0" * 64)
+        self.assert_refused(self.build(), "[INPUTS]", "registered sha256")
+
+    def test_a_registered_byte_count_that_does_not_match_is_refused(self):
+        with open(os.path.join(GET_FIXTURES, "TEST-INPUT-get-schema-issue1.json"), "rb") as f:
+            size = len(f.read())
+        self.register_get((GET_V1,), bytes=size + 1)
+        self.assert_refused(self.build(), "[INPUTS]", f"registered {size + 1} bytes")
+
+    def test_version_1_0_is_refused_by_name(self):
+        for slug in ("1.0", "1.0/"):
+            self.register_get((slug,))
+            self.assert_refused(self.build(), "[GET_PATH]", "/get/1.0 and /get/1.0/ are refused "
+                                                            "by name")
+
+    def test_a_media_type_other_than_schema_json_is_refused(self):
+        self.register_get((GET_V1,), media_type="application/json")
+        self.assert_refused(self.build(), "[REGISTRY]", "the GET record serves "
+                                                        "application/schema+json")
+
+    def test_a_get_test_input_is_refused_without_the_explicit_switch(self):
+        self.assert_refused(self.build(PVR_ALLOW_TEST_INPUT="0"), "[TEST_INPUT]")
+
+    def test_a_schema_altered_after_building_is_refused_at_package(self):
+        self.built()
+        with open(self.get_file(), "ab") as f:
+            f.write(b"\n")
+        r = self.gate("--check")
+        self.assertEqual(2, r.returncode)
+        self.assertIn("not the registered bytes", r.stdout)
+
+    def test_a_path_at_get_1_0_is_refused_at_package(self):
+        self.built()
+        os.makedirs(self.rel("get", "1.0"))
+        with open(self.rel("get", "1.0", "schema.json"), "w") as f:
+            f.write("{}")
+        r = self.gate("--check")
+        self.assertEqual(2, r.returncode)
+        self.assertIn("[GET_PATH] get/1.0/schema.json", r.stdout)
+
+    def test_a_two_issue_lineage_has_one_current_issue(self):
+        self.register_get((GET_V1, GET_V2))
+        self.built()
+        idx = self.load(RELEASE, "get", "index.json")
+        self.assertEqual([GET_V1, GET_V2], [e["version"] for e in idx["entries"]])
+        self.assertEqual(GET_V2, idx["entries"][0]["superseded_by"])
+        self.assertEqual([False, True], [e["is_current"] for e in idx["entries"]])
+
+
+class TestGetLive(VenueCase):
+    """The served GET schema bytes, hashed against the registration."""
+
+    GET_VERSIONS = (GET_V1,)
+
+    def test_the_venue_serving_the_schema_bytes_passes(self):
+        r, ev = self.verify()
+        self.assertEqual(0, r.returncode, r.stdout[-3000:])
+        self.assertTrue(ev["namespaces"]["get"]["passed"])
+        path = f"{GET_V1}/TEST-INPUT-get-schema-issue1.json"
+        checks = {c["check"]: c["passed"] for c in ev["checks"]}
+        for name in (f"[get] digest {path}", f"[get] bytes {path}",
+                     f"[get] content-type {path}", f"[get] registered digest {path}",
+                     "[get] served manifest matches the frozen manifest",
+                     "[get] landing page body matches index.html"):
+            self.assertTrue(checks.get(name), name)
+        import urllib.request
+        with urllib.request.urlopen(f"http://127.0.0.1:{self.venue.port}/get/{path}") as resp:
+            served = resp.read()
+        with open(os.path.join(GET_FIXTURES, "TEST-INPUT-get-schema-issue1.json"), "rb") as f:
+            self.assertEqual(f.read(), served)
+        self.assertEqual(sha_bytes(served), ev["served"]["get"][path]["sha256"])
+
+    def test_a_served_schema_that_differs_fails_and_withholds_approval(self):
+        path = f"{GET_V1}/TEST-INPUT-get-schema-issue1.json"
+        with open(self.venue.path("get", GET_V1, "TEST-INPUT-get-schema-issue1.json"),
+                  "ab") as f:
+            f.write(b"\n")
+        r, ev = self.verify()
+        self.assertEqual(1, r.returncode)
+        self.assertIn(f"FAIL  [get] digest {path}", r.stdout)
+        self.assertIn(f"FAIL  [get] registered digest {path}", r.stdout)
+        self.assertTrue(any("namespace get failed" in b for b in ev["approval_blockers"]))
+
+    def test_the_served_bytes_are_hashed_against_the_registration_not_only_the_manifest(self):
+        """Venue and frozen manifest agree; the registration does not. It fails."""
+        self.register_get((GET_V1,), sha256="0" * 64)
+        r, ev = self.verify()
+        path = f"{GET_V1}/TEST-INPUT-get-schema-issue1.json"
+        self.assertEqual(1, r.returncode)
+        self.assertIn(f"PASS  [get] digest {path}", r.stdout)
+        self.assertIn(f"FAIL  [get] registered digest {path}", r.stdout)
+        self.assertFalse(ev["namespaces"]["get"]["passed"])
+
+    def test_a_stale_bytecode_cache_of_the_registry_is_never_trusted(self):
+        """Regression, 19 October 2026: the case above passed when bytecode was cached.
+
+        A records.cpython-*.pyc is written for the registry, the registration
+        is then rewritten with a digest of the same length, and the source's
+        modification time is put back, so Python's own check sees the cache as
+        current. A plain import reads the stale registration; the verifier must
+        not.
+        """
+        import importlib.util
+        import py_compile
+        path = os.path.join(self.dir, "records.py")
+        before = os.stat(path)
+        py_compile.compile(path, cfile=importlib.util.cache_from_source(path), doraise=True,
+                           invalidation_mode=py_compile.PycInvalidationMode.TIMESTAMP)
+        self.register_get((GET_V1,), sha256="0" * 64)
+        self.assertEqual(before.st_size, os.path.getsize(path))
+        os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+        # The trap is set: an ordinary import is served the stale registration.
+        stale = subprocess.run(
+            [sys.executable, "-c", "import sys; sys.path.insert(0, '.'); import records; "
+                                   "print(records.GET_REGISTRATION['entries'][0]['sha256'])"],
+            cwd=self.dir, capture_output=True, text=True)
+        self.assertNotEqual("0" * 64, stale.stdout.strip(), "the stale cache was not in force")
+        r, ev = self.verify()
+        path_ = f"{GET_V1}/TEST-INPUT-get-schema-issue1.json"
+        self.assertEqual(1, r.returncode, r.stdout[-3000:])
+        self.assertIn(f"FAIL  [get] registered digest {path_}", r.stdout)
+        self.assertFalse(ev["namespaces"]["get"]["passed"])
+
+    def test_the_reserved_get_paths_are_not_served_and_their_status_is_recorded(self):
+        r, ev = self.verify()
+        self.assertEqual(0, r.returncode, r.stdout[-3000:])
+        checks = {c["check"]: c for c in ev["checks"]}
+        for p in ("/get/1.0", "/get/1.0/"):
+            c = checks[f"[get] reserved path not served: {p}"]
+            self.assertTrue(c["passed"])
+            self.assertIn("status 404", c["detail"])
+
+    def test_a_venue_serving_get_1_0_fails_and_withholds_approval(self):
+        os.makedirs(self.venue.path("get", "1.0"))
+        with open(self.venue.path("get", "1.0", "index.html"), "w") as f:
+            f.write("<html>not produced by this pipeline</html>")
+        r, ev = self.verify()
+        self.assertEqual(1, r.returncode)
+        self.assertIn("FAIL  [get] reserved path not served: /get/1.0 ", r.stdout)
+        self.assertIn("FAIL  [get] reserved path not served: /get/1.0/", r.stdout)
+        self.assertIn("status 200", r.stdout)
+        self.assertFalse(ev["production_approval"])
+        self.assertTrue(any("namespace get failed" in b for b in ev["approval_blockers"]))
+
+
+# ================================================================ carry
+
+class TestCarriedForward(PublicationCase):
+    """A built record already published is carried forward byte for byte, never rebuilt."""
+
+    NEXT = "get-only-release"
+    GET_VERSIONS = (GET_V1,)
+
+    def publish_first(self):
+        r = self.record(self.evidence())
+        self.assertEqual(0, r.returncode, r.stdout)
+        return self.meta()
+
+    def carry(self, name="disclosures", release=RELEASE, sequence=1, digest=None):
+        if digest is None:
+            digest = self.meta(release)["namespaces"][name]["manifest_sha256"]
+        self.write_carry({name: {"carried_from_release": release, "published_sequence": sequence,
+                                 "published_manifest_sha256": digest}})
+
+    def ledger_bytes(self, ns):
+        out = {}
+        for rel in (ns["first_publication_ledger"], ns["index_ledger"]):
+            out[rel] = sha(os.path.join(self.dir, rel))
+        for p, d in tree(os.path.join(self.dir, ns["snapshots"])).items():
+            out[p] = d
+        return out
+
+    def get_only(self):
+        self.publish_first()
+        self.register_get((GET_V1, GET_V2))
+        self.carry()
+        self.built(self.NEXT)
+
+    def test_a_get_only_release_carries_the_disclosure_record_byte_for_byte(self):
+        self.get_only()
+        self.assertEqual(tree(self.rel("disclosures")),
+                         tree(self.rel("disclosures", name=self.NEXT)))
+        first, meta = self.meta(), self.meta(self.NEXT)
+        d, g = meta["namespaces"]["disclosures"], meta["namespaces"]["get"]
+        self.assertEqual(("carried", RELEASE, 1, [],
+                          first["namespaces"]["disclosures"]["manifest_sha256"],
+                          first["namespaces"]["disclosures"]["index_sha256"]),
+                         (d["mode"], d["carried_from_release"], d["sequence"],
+                          d["versions_awaiting_first_publication"], d["manifest_sha256"],
+                          d["index_sha256"]))
+        self.assertEqual(("built", 2, [GET_V2]),
+                         (g["mode"], g["sequence"], g["versions_awaiting_first_publication"]))
+        r = self.gate(name=self.NEXT)
+        self.assertEqual(0, r.returncode, r.stdout[-3000:] + r.stderr[-2000:])
+        self.assertIn(f"disclosures    carried from {RELEASE}", r.stdout)
+        check = self.gate("--check", name=self.NEXT)
+        self.assertEqual(0, check.returncode, check.stdout[-3000:])
+        with open(os.path.join(self.dir, "verification",
+                               f"RELEASE_RECORD_{self.NEXT}.md")) as f:
+            self.assertIn("### `/disclosures/`, carried forward", f.read())
+
+    def test_a_carry_registered_against_another_digest_is_refused(self):
+        self.publish_first()
+        self.carry(digest="e" * 64)
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode)
+        # Round 2: refused first as not the latest published record.
+        self.assertIn("[CARRY] the disclosures record registered as carried forward is not "
+                      "the latest published disclosures record", r.stdout)
+        self.assertFalse(os.path.exists(self.rel(name=self.NEXT)))
+
+    def test_a_carried_source_differing_by_one_byte_is_refused(self):
+        self.publish_first()
+        self.carry()
+        with open(self.rel("disclosures", "test-disclosure", "v1", "test-disclosure-v1.md"),
+                  "ab") as f:
+            f.write(b"X")
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode)
+        self.assertIn("[CARRY_IDENTITY]", r.stdout)
+        self.assertIn(f"{RELEASE}/disclosures/test-disclosure/v1/test-disclosure-v1.md", r.stdout)
+        self.assertFalse(os.path.exists(self.rel(name=self.NEXT)))
+
+    def test_carrying_from_an_unpublished_release_is_refused(self):
+        self.carry()
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode)
+        self.assertIn("[CARRY_IDENTITY]", r.stdout)
+        self.assertIn("not recorded as published", r.stdout)
+
+    def test_a_carried_record_altered_after_building_is_refused_at_package(self):
+        self.get_only()
+        with open(self.rel("disclosures", "index.html", name=self.NEXT), "ab") as f:
+            f.write(b"\n")
+        r = self.gate("--check", name=self.NEXT)
+        self.assertEqual(2, r.returncode)
+        self.assertIn("[CARRY_IDENTITY] disclosures/index.html", r.stdout)
+
+    def test_recording_a_get_only_release_writes_no_disclosure_ledger(self):
+        self.get_only()
+        self.assertEqual(0, self.bind(self.NEXT).returncode)
+        disclosures_before = self.ledger_bytes(records.DISCLOSURES)
+        charter_before = self.charter_state()
+        r = self.record(self.evidence(self.NEXT), name=self.NEXT)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"disclosures     carried unchanged from {RELEASE}", r.stdout)
+        self.assertEqual(disclosures_before, self.ledger_bytes(records.DISCLOSURES))
+        self.assertEqual(charter_before, self.charter_state())
+        g = records.GET
+        self.assertEqual({"1", "2"}, set(self.load(g["index_ledger"])["versions"]))
+        self.assertEqual({GET_V1, GET_V2},
+                         set(self.load(g["first_publication_ledger"])["versions"]))
+        snap = os.path.join(self.dir, g["snapshots"], "2")
+        pub = self.load(g["snapshots"], "2", "publication.json")
+        self.assertEqual(("carried unchanged", RELEASE, False),
+                         (pub["namespaces"]["disclosures"]["state"],
+                          pub["namespaces"]["disclosures"]["carried_from_release"],
+                          pub["namespaces"]["disclosures"]["ledgers_written"]))
+        self.assertEqual(self.meta(RELEASE)["namespaces"]["disclosures"]["manifest_sha256"],
+                         sha(os.path.join(snap, "carried", "disclosures", "manifest.json")))
+        self.assertEqual(PUBLISHED, sha(os.path.join(snap, "carried", "charter",
+                                                     "manifest.json")))
+
+    def test_a_get_only_release_verifies_live_with_the_carried_record(self):
+        self.get_only()
+        venue = Venue(self.rel(name=self.NEXT))
+        self.addCleanup(venue.close)
+        r = self.run_script("verify_live.py", f"--release={self.NEXT}",
+                            f"http://127.0.0.1:{venue.port}/",
+                            PVR_ALLOW_PLAIN_HTTP="1", PVR_LIVE_OUT_DIR=self.live)
+        self.assertEqual(0, r.returncode, r.stdout[-3000:])
+        self.assertIn("PASS  [disclosures] carried: served manifest is the published manifest",
+                      r.stdout)
+        self.assertIn("PASS  [disclosures] carried: the index ledger records the published "
+                      "manifest", r.stdout)
+        # A venue serving a consistently altered disclosure record fails.
+        self.alter_consistently(venue.path("disclosures"))
+        r = self.run_script("verify_live.py", f"--release={self.NEXT}",
+                            f"http://127.0.0.1:{venue.port}/",
+                            PVR_ALLOW_PLAIN_HTTP="1", PVR_LIVE_OUT_DIR=self.live)
+        self.assertEqual(1, r.returncode)
+        self.assertIn("FAIL  [disclosures] carried: served manifest is the published manifest",
+                      r.stdout)
+
+    def test_a_disclosure_only_release_can_carry_the_get_record(self):
+        self.publish_first()
+        self.register(("v1", "v2"))
+        self.carry(name="get")
+        self.built(self.NEXT)
+        self.assertEqual(tree(self.rel("get")), tree(self.rel("get", name=self.NEXT)))
+        meta = self.meta(self.NEXT)
+        self.assertEqual(("carried", 2), (meta["namespaces"]["get"]["mode"],
+                                          meta["namespaces"]["disclosures"]["sequence"]))
+        for args in ((), ("--check",)):
+            g = self.gate(*args, name=self.NEXT)
+            self.assertEqual(0, g.returncode, g.stdout[-3000:])
+        self.assertIn(f"get            carried from {RELEASE}", g.stdout)
+
+    def test_carrying_every_built_record_is_refused(self):
+        self.publish_first()
+        first = self.meta()
+        self.write_carry({n: {"carried_from_release": RELEASE, "published_sequence": 1,
+                              "published_manifest_sha256":
+                                  first["namespaces"][n]["manifest_sha256"]}
+                          for n in ("disclosures", "get")})
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode)
+        self.assertIn("would publish nothing new", r.stdout)
+
+    def check_present_carried_get_registration(self, block, expected):
+        """Every validator must reject today's bad registration independently."""
+        self.publish_first()
+        self.register(("v1", "v2"))
+        self.carry(name="get")
+        self.built(self.NEXT)
+        self.assertEqual(0, self.bind(self.NEXT).returncode)
+        evidence = self.evidence(self.NEXT)
+        before = (tree(os.path.join(self.dir, "ledgers")),
+                  tree(os.path.join(self.dir, "releases")),
+                  tree(self.rel(name=self.NEXT)))
+        self.write_block("GET REGISTRATION", block)
+        r = self.build("invalid-carried-get")
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn(expected, r.stdout)
+        self.assertFalse(os.path.exists(self.rel(name="invalid-carried-get")))
+        for args in ((), ("--check",)):
+            r = self.gate(*args, name=self.NEXT)
+            self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+            self.assertIn(expected, r.stdout)
+        venue = Venue(self.rel(name=self.NEXT))
+        self.addCleanup(venue.close)
+        r = self.run_script("verify_live.py", f"--release={self.NEXT}",
+                            f"http://127.0.0.1:{venue.port}/",
+                            PVR_ALLOW_PLAIN_HTTP="1", PVR_LIVE_OUT_DIR=self.live)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn("FAIL  [get] regist", r.stdout)
+        r = self.record(evidence, name=self.NEXT)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn(expected, r.stdout)
+        self.assertEqual(before, (tree(os.path.join(self.dir, "ledgers")),
+                                  tree(os.path.join(self.dir, "releases")),
+                                  tree(self.rel(name=self.NEXT))))
+
+    def carried_get_block(self, **changes):
+        with open(os.path.join(GET_FIXTURES, "TEST-INPUT-get-schema-issue1.json"), "rb") as f:
+            body = f.read()
+        entry = {"version": GET_V1, "src": "TEST-INPUT-get-schema-issue1.json",
+                 "sha256": sha_bytes(body), "bytes": len(body),
+                 "document_date": "2026-10-11", "media_type": GET_SCHEMA,
+                 "status": "public draft for comment", "reason": "Synthetic GET issue."}
+        entry.update(changes)
+        return get_registration_block([entry])
+
+    def test_carried_get_rejects_a_different_present_digest_in_every_validator(self):
+        self.check_present_carried_get_registration(self.carried_get_block(sha256="0" * 64),
+                                                    "sha256")
+
+    def test_carried_get_rejects_a_different_present_size_in_every_validator(self):
+        self.check_present_carried_get_registration(self.carried_get_block(bytes=1), "bytes")
+
+    def test_carried_get_rejects_an_empty_present_registration_in_every_validator(self):
+        self.check_present_carried_get_registration(
+            "# BEGIN GET REGISTRATION\nGET_REGISTRATION = {}\n# END GET REGISTRATION",
+            "[REGISTRY]")
+
+    def test_carried_get_rejects_incomplete_present_metadata_in_every_validator(self):
+        self.check_present_carried_get_registration(self.carried_get_block(status=""),
+                                                    "[REGISTRY]")
+
+    def test_carried_get_still_checks_the_published_bytes_when_new_inputs_are_valid(self):
+        self.publish_first()
+        self.register(("v1", "v2"))
+        self.carry(name="get")
+        # Valid new input bytes and registration cannot authorise carrying old bytes.
+        self.register_get((GET_V2,))
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn("[GET_REGISTRATION]", r.stdout)
+        self.assertFalse(os.path.exists(self.rel(name=self.NEXT)))
+
+    def test_a_valid_carried_get_checks_present_registration_live_and_records(self):
+        self.publish_first()
+        self.register(("v1", "v2"))
+        self.carry(name="get")
+        self.built(self.NEXT)
+        venue = Venue(self.rel(name=self.NEXT))
+        self.addCleanup(venue.close)
+        r = self.run_script("verify_live.py", f"--release={self.NEXT}",
+                            f"http://127.0.0.1:{venue.port}/",
+                            PVR_ALLOW_PLAIN_HTTP="1", PVR_LIVE_OUT_DIR=self.live)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("PASS  [get] registration valid", r.stdout)
+        self.assertIn("PASS  [get] registered digest", r.stdout)
+        before = self.ledger_bytes(records.GET)
+        self.assertEqual(0, self.bind(self.NEXT).returncode)
+        r = self.record(self.evidence(self.NEXT), name=self.NEXT)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual(before, self.ledger_bytes(records.GET))
+
+    # --- only the LATEST published record is carried (round 2 guard)
+
+    LATER = "later-disclosure-release"
+
+    def publish_later_disclosures(self):
+        """Publish RELEASE (disclosure seq 1), then LATER (disclosure seq 2, GET carried).
+
+        The sandbox analogue of a disclosure-only publish-004 recorded after
+        publish-003: afterwards the latest published disclosure release is
+        LATER, and RELEASE is an earlier, still valid, published release.
+        """
+        self.publish_first()
+        self.register(("v1", "v2"))
+        self.carry(name="get")
+        self.built(self.LATER)
+        self.assertEqual(0, self.bind(self.LATER).returncode)
+        r = self.record(self.evidence(self.LATER), name=self.LATER)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual({"1", "2"}, set(self.load(records.DISCLOSURES["index_ledger"])["versions"]))
+        self.register_get((GET_V1, GET_V2))
+
+    def test_carrying_an_earlier_published_disclosure_release_is_refused(self):
+        self.publish_later_disclosures()
+        self.carry(release=RELEASE, sequence=1)
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode, r.stdout)
+        self.assertIn("[CARRY]", r.stdout)
+        self.assertIn(f"the latest published disclosures release is {self.LATER} at sequence 2",
+                      r.stdout)
+        self.assertFalse(os.path.exists(self.rel(name=self.NEXT)))
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "releases", f"{self.NEXT}.json")))
+
+    def test_carrying_the_latest_release_with_another_digest_is_refused(self):
+        self.publish_later_disclosures()
+        self.carry(release=self.LATER, sequence=2, digest=self.meta(RELEASE)["namespaces"]
+                   ["disclosures"]["manifest_sha256"])
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode, r.stdout)
+        self.assertIn("[CARRY]", r.stdout)
+        self.assertIn(f"the latest published disclosures release is {self.LATER} at sequence 2",
+                      r.stdout)
+        self.assertFalse(os.path.exists(self.rel(name=self.NEXT)))
+
+    def test_carrying_the_latest_published_disclosure_release_passes(self):
+        self.publish_later_disclosures()
+        self.carry(release=self.LATER, sequence=2)
+        self.built(self.NEXT)
+        self.assertEqual(tree(self.rel("disclosures", name=self.LATER)),
+                         tree(self.rel("disclosures", name=self.NEXT)))
+        for args in ((), ("--check",)):
+            g = self.gate(*args, name=self.NEXT)
+            self.assertEqual(0, g.returncode, g.stdout[-3000:])
+        self.assertIn(f"disclosures    carried from {self.LATER}, sequence 2", g.stdout)
+        venue = Venue(self.rel(name=self.NEXT))
+        self.addCleanup(venue.close)
+        r = self.run_script("verify_live.py", f"--release={self.NEXT}",
+                            f"http://127.0.0.1:{venue.port}/",
+                            PVR_ALLOW_PLAIN_HTTP="1", PVR_LIVE_OUT_DIR=self.live)
+        self.assertEqual(0, r.returncode, r.stdout[-3000:])
+        self.assertIn("PASS  [disclosures] carried: from the latest published disclosures "
+                      "release", r.stdout)
+        self.assertIn("PASS  [disclosures] carried: served index is the latest published index",
+                      r.stdout)
+
+    def test_a_get_release_overtaken_by_a_later_disclosure_publication_fails_gate_and_live(self):
+        """Built while RELEASE was latest; LATER is published afterwards. It is now stale."""
+        self.publish_first()
+        self.register_get((GET_V1, GET_V2))
+        self.carry()
+        self.built(self.NEXT)
+        g = self.gate(name=self.NEXT)
+        self.assertEqual(0, g.returncode, g.stdout[-3000:])
+        # Now a disclosure release is published, as publish-004 could be.
+        self.register(("v1", "v2"))
+        self.register_get((GET_V1,))
+        os.unlink(os.path.join(self.dir, "inputs", "get", "TEST-INPUT-get-schema-issue2.json"))
+        self.carry(name="get")
+        self.built(self.LATER)
+        self.assertEqual(0, self.bind(self.LATER).returncode)
+        r = self.record(self.evidence(self.LATER), name=self.LATER)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        # The GET release's registry again, exactly as it was built.
+        self.register_get((GET_V1, GET_V2))
+        self.carry()
+        g = self.gate("--check", name=self.NEXT)
+        self.assertEqual(2, g.returncode)
+        self.assertIn("[CARRY] the carry entry names disclosures from release-under-test",
+                      g.stdout)
+        self.assertIn("[CARRY] disclosures/index.json hashes to", g.stdout)
+        venue = Venue(self.rel(name=self.NEXT))
+        self.addCleanup(venue.close)
+        r = self.run_script("verify_live.py", f"--release={self.NEXT}",
+                            f"http://127.0.0.1:{venue.port}/",
+                            PVR_ALLOW_PLAIN_HTTP="1", PVR_LIVE_OUT_DIR=self.live)
+        self.assertEqual(1, r.returncode)
+        self.assertIn("FAIL  [disclosures] carried: from the latest published disclosures "
+                      "release", r.stdout)
+        self.assertIn("FAIL  [disclosures] carried: served index is the latest published index",
+                      r.stdout)
+
+    def test_a_ledger_behind_a_published_marker_is_refused(self):
+        self.publish_first()
+        meta = self.meta()
+        meta["namespaces"]["disclosures"]["sequence"] = 9
+        with open(os.path.join(self.dir, "releases", "phantom.json"), "w") as f:
+            json.dump(meta, f)
+        self.register_get((GET_V1, GET_V2))
+        self.carry()
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode, r.stdout)
+        self.assertIn("[CARRY]", r.stdout)
+        self.assertIn("the ledger is behind publication", r.stdout)
+
+    def test_the_charter_cannot_be_registered_as_carried_forward(self):
+        self.write_carry({"charter": {"carried_from_release": "publish", "published_sequence": 1,
+                                      "published_manifest_sha256": PUBLISHED}})
+        r = self.build(self.NEXT)
+        self.assertEqual(2, r.returncode)
+        self.assertIn("only a built namespace is carried forward", r.stdout)
+
+
+# ============================================================ GET absent
+
+class TestGetAbsent(Sandbox):
+    """GET_REGISTRATION = ABSENT: no GET namespace anywhere, and only ABSENT means that.
+
+    Round 2, 19 October 2026. In round 1 the GET namespace was unconditional and
+    shipped as a refused placeholder, so a disclosure-only release that the
+    unchanged code builds was refused ("the GET schema is not registered"). The
+    tests passed only because the sandbox registered a synthetic GET by
+    default. Here nothing registers GET: the sandbox keeps the shipped ABSENT.
+    """
+
+    def assert_refused(self, r, *needles):
+        self.assertEqual(2, r.returncode, r.stdout)
+        for n in needles:
+            self.assertIn(n, r.stdout)
+        self.assertFalse(os.path.exists(self.rel()))
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "releases", f"{RELEASE}.json")))
+
+    def test_the_sandbox_is_the_shipped_absent_registration(self):
+        with open(os.path.join(self.dir, "records.py")) as f:
+            text = f.read()
+        self.assertIn("\nGET_REGISTRATION = ABSENT\n", text)
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "inputs", "get")))
+
+    def test_a_disclosure_only_release_builds_with_no_get_namespace(self):
+        r = self.built()
+        self.assertIn("get          absent   GET_REGISTRATION = ABSENT", r.stdout)
+        self.assertEqual({"index.html", "charter", "disclosures"}, set(os.listdir(self.rel())))
+        meta = self.meta()
+        self.assertEqual({"charter", "disclosures"}, set(meta["namespaces"]))
+        with open(self.rel("index.html")) as f:
+            page = f.read()
+        self.assertNotIn("/get/", page)
+        self.assertNotIn(records.GET["title"], page)
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "ledgers", "get")))
+
+    def test_the_gate_requires_no_get_check(self):
+        self.built()
+        for args in ((), ("--check",)):
+            r = self.gate(*args)
+            self.assertEqual(0, r.returncode, r.stdout[-3000:] + r.stderr[-2000:])
+            self.assertIn("2 namespaces", r.stdout)
+            self.assertIn("get            absent (GET_REGISTRATION = ABSENT); no GET check "
+                          "required", r.stdout)
+            self.assertNotIn("[GET", r.stdout)
+        with open(os.path.join(self.dir, "verification", f"RELEASE_RECORD_{RELEASE}.md")) as f:
+            self.assertNotIn("/get/", f.read())
+
+    def test_a_get_directory_in_a_release_without_get_is_refused_at_package(self):
+        self.built()
+        os.makedirs(self.rel("get"))
+        with open(self.rel("get", "index.json"), "w") as f:
+            f.write("{}")
+        r = self.gate("--check")
+        self.assertEqual(2, r.returncode)
+        self.assertIn("[LAYOUT]", r.stdout)
+
+    def test_a_marker_naming_get_is_refused_when_the_registry_has_none(self):
+        self.built()
+        meta = self.meta()
+        meta["namespaces"]["get"] = dict(meta["namespaces"]["disclosures"], path="get")
+        self.write_meta(meta)
+        r = self.gate("--check")
+        self.assertEqual(2, r.returncode)
+        self.assertIn("[NAMESPACES] the freeze marker names ['charter', 'disclosures', 'get'], "
+                      "the registry ['charter', 'disclosures']", r.stdout)
+
+    def test_only_absent_means_absent_every_ambiguous_form_is_refused(self):
+        placeholder = {"version": records.UNREGISTERED, "src": records.UNREGISTERED,
+                       "sha256": records.UNREGISTERED, "bytes": None,
+                       "document_date": records.UNREGISTERED, "media_type": GET_SCHEMA,
+                       "status": records.UNREGISTERED, "reason": records.UNREGISTERED}
+        forms = {
+            "GET_REGISTRATION = None": "neither ABSENT nor a registration",
+            "GET_REGISTRATION = 'absent'": "neither ABSENT nor a registration",
+            "GET_REGISTRATION = ''": "neither ABSENT nor a registration",
+            "GET_REGISTRATION = {}": "entries is None: not registered",
+            "GET_REGISTRATION = {'entries': []}": "An empty registration is not ABSENT",
+            "GET_REGISTRATION = {'entries': None}": "entries is None: not registered",
+            f"GET_REGISTRATION = {{'entries': [{placeholder!r}]}}":
+                "version slug is 'UNREGISTERED'",
+            "GET_REGISTRATION = {'entries': [{'version': '1.0.1-test-draft-v1'}]}":
+                "byte count is None",
+        }
+        for line, needle in forms.items():
+            with self.subTest(line=line):
+                self.write_block("GET REGISTRATION",
+                                 f"# BEGIN GET REGISTRATION\n{line}\n# END GET REGISTRATION")
+                self.assert_refused(self.build(), "[REGISTRY]", needle)
+
+    def test_the_round_1_placeholder_is_refused_and_says_how_to_declare_absence(self):
+        self.write_block("GET REGISTRATION", GET_PLACEHOLDER_BLOCK)
+        self.assert_refused(self.build(), "[REGISTRY]", "the GET schema is not registered",
+                            "registers GET_REGISTRATION = ABSENT, nothing else")
+
+    def test_absent_is_refused_once_the_get_record_has_been_published(self):
+        os.makedirs(os.path.join(self.dir, "ledgers", "get"))
+        with open(os.path.join(self.dir, records.GET["index_ledger"]), "w") as f:
+            json.dump({"versions": {"1": {}}}, f)
+        self.assert_refused(self.build(), "[REGISTRY]", "the GET record has been published",
+                            "never dropped from a release")
+
+    def test_carrying_get_while_absent_is_refused(self):
+        self.write_carry({"get": {"carried_from_release": "publish-003",
+                                  "published_sequence": 1,
+                                  "published_manifest_sha256": "a" * 64}})
+        self.assert_refused(self.build(), "[REGISTRY]", "cannot carry it")
+
+
+class TestGetAbsentLive(VenueCase):
+    """The live verifier with GET absent: no GET record check, the reserved paths still checked."""
+
+    def test_a_venue_without_get_passes_with_only_the_reserved_path_checks(self):
+        r, ev = self.verify()
+        self.assertEqual(0, r.returncode, r.stdout[-3000:])
+        self.assertEqual({"charter", "disclosures"}, set(ev["namespaces"]))
+        self.assertEqual(["get"], ev["absent_namespaces"])
+        get_checks = sorted(c["check"] for c in ev["checks"] if c["check"].startswith("[get]"))
+        self.assertEqual(["[get] reserved path not served: /get/1.0",
+                          "[get] reserved path not served: /get/1.0/"], get_checks)
+        for c in ev["checks"]:
+            if c["check"].startswith("[get]"):
+                self.assertTrue(c["passed"])
+                self.assertIn("status 404", c["detail"])
+        self.assertIn("links /charter/, /disclosures/", r.stdout)
+        self.assertFalse(any("namespace get" in b for b in ev["approval_blockers"]))
+
+    def test_a_venue_serving_get_1_0_still_fails_when_the_release_has_no_get(self):
+        os.makedirs(self.venue.path("get", "1.0"))
+        with open(self.venue.path("get", "1.0", "index.html"), "w") as f:
+            f.write("<html>not produced by this pipeline</html>")
+        r, ev = self.verify()
+        self.assertEqual(1, r.returncode)
+        self.assertIn("FAIL  [get] reserved path not served: /get/1.0 ", r.stdout)
+        self.assertIn("FAIL  [get] reserved path not served: /get/1.0/", r.stdout)
+        self.assertFalse(ev["passed"])
+        self.assertFalse(ev["production_approval"])
+        self.assertTrue(any("check(s) failed" in b for b in ev["approval_blockers"]))
+
+
+class TestGetAbsentRecording(PublicationCase):
+    """The recorder with GET absent: the disclosure record only, nothing under ledgers/get/."""
+
+    def test_recording_writes_no_get_ledger_and_states_no_get_namespace(self):
+        before = self.charter_state()
+        r = self.record(self.evidence())
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual(before, self.charter_state())
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "ledgers", "get")))
+        _, index_path, snaps = self.disclosure_ledgers()
+        self.assertEqual({"1"}, set(self.load(index_path)["versions"]))
+        pub = self.load(snaps, "1", "publication.json")
+        self.assertEqual({"charter", "disclosures"}, set(pub["namespaces"]))
+        self.assertTrue(self.meta()["published"])
+
+    def test_evidence_or_marker_naming_get_is_refused_when_the_registry_has_none(self):
+        meta = self.meta()
+        meta["namespaces"]["get"] = dict(meta["namespaces"]["disclosures"], path="get")
+        self.write_meta(meta)
+        r = self.record(self.evidence())
+        self.assertEqual(2, r.returncode)
+        self.assertIn("[NAMESPACES]", r.stdout)
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "ledgers")))
+
+
+# The builder and registry at b4e36d3, which built the published publish-003.
+BASELINE = os.path.join(HERE, "test_fixtures", "baseline-b4e36d3")
+BASELINE_BUILDER_SHA = "d973186ccf98bd63a22815cf0eaf8b36915e51caf01e44779bf3555717765f6d"
+BASELINE_REGISTRY_SHA = "78133311589c784eea11aeb1d6acad87fc786b01b2452671e64f1b69ab5cbdbb"
+
+FROZEN_CLOCK = '''import datetime as _real, runpy, sys, types
+FIXED = _real.datetime.fromisoformat(sys.argv[1])
+class FrozenDateTime(_real.datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return FIXED.astimezone(tz) if tz is not None else FIXED.replace(tzinfo=None)
+fake = types.ModuleType("datetime")
+fake.__dict__.update(_real.__dict__)
+fake.datetime = FrozenDateTime
+sys.modules["datetime"] = fake
+script = sys.argv[2]
+sys.argv = [script] + sys.argv[3:]
+runpy.run_path(script, run_name="__main__")
+'''
+
+
+def json_leaves(x, path=""):
+    if isinstance(x, dict):
+        for k, v in x.items():
+            yield from json_leaves(v, f"{path}.{k}" if path else k)
+    elif isinstance(x, list):
+        for i, v in enumerate(x):
+            yield from json_leaves(v, f"{path}[{i}]")
+    else:
+        yield path, x
+
+
+def differing_leaves(a, b):
+    la, lb = dict(json_leaves(a)), dict(json_leaves(b))
+    return {k: (la.get(k), lb.get(k)) for k in set(la) | set(lb) if la.get(k) != lb.get(k)}
+
+
+class TestGetAbsentRegressionIsolation(Sandbox):
+    """The absent comparison owns its state, even inside a GET release gate."""
+
+    GET_VERSIONS = (GET_V1,)
+
+    def run_absent_comparison(self):
+        r = self.run_script("test_namespaces.py", "TestGetAbsentRegression")
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("Ran 2 tests", r.stderr)
+        self.assertNotIn("skipped", r.stderr)
+
+    def test_absent_comparison_with_get_registered_before_first_publication(self):
+        self.run_absent_comparison()
+
+    def test_absent_comparison_with_get_carry_and_publication_history(self):
+        # The outer state must not leak into the deliberate pre-GET comparison.
+        self.write_carry({"get": {"carried_from_release": "not-copied-by-comparison",
+                                  "published_sequence": 1,
+                                  "published_manifest_sha256": "a" * 64}})
+        ledger = os.path.join(self.dir, "ledgers", "get")
+        os.makedirs(ledger)
+        with open(os.path.join(ledger, "first_publication.json"), "w") as f:
+            json.dump({"versions": {GET_V1: {"first_published": TODAY}}}, f)
+        self.run_absent_comparison()
+
+
+class TestGetAbsentRegression(unittest.TestCase):
+    """With GET absent, a disclosure-only release is the release b4e36d3 builds.
+
+    Two sandboxes hold the same inputs: the real Charter, the real disclosure
+    ledgers and inputs, and the registered disclosure entries plus one
+    synthetic TEST INPUT issue appended. One runs the builder and registry at
+    b4e36d3 (pinned by the digests publish-003 records), the other the current
+    builder with GET_REGISTRATION = ABSENT. Both run under one frozen UTC clock.
+    Every file of the two release trees must be byte-identical except the
+    disclosure manifest and its sidecar, and those two may differ only in the
+    builder and registry source digests the manifest records, each the digest
+    of its own tree's file.
+    """
+
+    INSTANT = "2026-10-19T12:00:00+00:00"
+    DAY = "2026-10-19"
+    NAME = "regression-release"
+
+    def setUp(self):
+        self.root = tempfile.mkdtemp(prefix="ns-regression-")
+        self.addCleanup(shutil.rmtree, self.root, True)
+        self.clock = os.path.join(self.root, "frozen_clock.py")
+        with open(self.clock, "w") as f:
+            f.write(FROZEN_CLOCK)
+        self.base, self.new = (self.sandbox("base", baseline=True),
+                               self.sandbox("new", baseline=False))
+
+    def sandbox(self, label, baseline):
+        d = os.path.join(self.root, label)
+        os.makedirs(d)
+        for item in SANDBOX + ("ledgers",):
+            src = os.path.join(HERE, item)
+            if os.path.isdir(src):
+                # This comparison deliberately models a world before GET publication.
+                # GET history belongs to the outer repository, not this fixture.
+                ignore = (lambda directory, names: ["get"] if "get" in names else []) \
+                    if item == "ledgers" else None
+                shutil.copytree(src, os.path.join(d, item), ignore=ignore)
+            elif os.path.isfile(src):
+                shutil.copyfile(src, os.path.join(d, item))
+        os.makedirs(os.path.join(d, "releases"))
+        shutil.copyfile(os.path.join(HERE, "releases", "publish.json"),
+                        os.path.join(d, "releases", "publish.json"))
+        make_writable(d)
+        if baseline:
+            for n in ("build_release.py", "records.py"):
+                shutil.copyfile(os.path.join(BASELINE, n), os.path.join(d, n))
+        # The same disclosure registration in both: the repository's entries and
+        # one synthetic issue appended, as a real next issue would be.
+        reg = records.DISCLOSURE_REGISTRATION
+        n = max(int(e["version"][1:]) for e in reg["entries"]) + 1
+        body = (b"<!-- ARKAYA-TEST-INPUT -->\n# TEST INPUT: synthetic disclosure issue for the "
+                b"GET-absent regression test\n")
+        name = f"TEST-INPUT-disclosure-v{n}.md"
+        with open(os.path.join(d, "inputs", "disclosures", name), "wb") as f:
+            f.write(body)
+        entries = list(reg["entries"]) + [{
+            "version": f"v{n}", "src": name, "sha256": sha_bytes(body), "bytes": len(body),
+            "document_date": self.DAY, "reason": "Synthetic issue. TEST INPUT."}]
+        path = os.path.join(d, "records.py")
+        with open(path) as f:
+            text = f.read()
+        block = registration_block(entries, slug=reg["record_slug"], title=reg["title"])
+        new = re.sub(r"# BEGIN DISCLOSURE REGISTRATION.*?# END DISCLOSURE REGISTRATION",
+                     lambda m: block, text, flags=re.S)
+        self.assertNotEqual(text, new)
+        if not baseline:
+            new = re.sub(r"# BEGIN GET REGISTRATION.*?# END GET REGISTRATION",
+                         lambda m: GET_ABSENT_BLOCK, new, flags=re.S)
+            new = re.sub(r"# BEGIN CARRY REGISTRATION.*?# END CARRY REGISTRATION",
+                         lambda m: "# BEGIN CARRY REGISTRATION\nCARRY_REGISTRATION = {}\n"
+                                   "# END CARRY REGISTRATION", new, flags=re.S)
+        with open(path, "w") as f:
+            f.write(new)
+        return d
+
+    def build_in(self, d):
+        e = {k: v for k, v in os.environ.items() if not k.startswith("PVR_")}
+        e.update(PVR_RELEASE_DIR=os.path.join(d, self.NAME), PVR_ALLOW_TEST_INPUT="1",
+                 PVR_RELEASE_DATE=self.DAY)
+        r = subprocess.run([sys.executable, self.clock, self.INSTANT,
+                            os.path.join(d, "build_release.py")],
+                           cwd=d, env=e, capture_output=True, text=True)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        return r
+
+    def test_the_baseline_is_the_builder_and_registry_that_built_publish_003(self):
+        self.assertEqual(BASELINE_BUILDER_SHA, sha(os.path.join(BASELINE, "build_release.py")))
+        self.assertEqual(BASELINE_REGISTRY_SHA, sha(os.path.join(BASELINE, "records.py")))
+        marker = os.path.join(HERE, "releases", "publish-003.json")
+        if os.path.isfile(marker):
+            with open(marker) as f:
+                m = json.load(f)
+            self.assertEqual(BASELINE_BUILDER_SHA, m["release_builder"]["sha256"])
+            self.assertEqual(BASELINE_REGISTRY_SHA, m["registry_sha256"])
+
+    def test_a_disclosure_only_release_is_byte_identical_to_the_b4e36d3_build(self):
+        self.build_in(self.base)
+        out = self.build_in(self.new)
+        self.assertIn("GET_REGISTRATION = ABSENT", out.stdout)
+        a = tree(os.path.join(self.base, self.NAME))
+        b = tree(os.path.join(self.new, self.NAME))
+        self.assertEqual(set(a), set(b), "the two releases hold different files")
+        self.assertFalse(any(p.startswith("get" + os.sep) for p in b))
+        differ = sorted(p for p in a if a[p] != b[p])
+        self.assertEqual([os.path.join("disclosures", "manifest.json"),
+                          os.path.join("disclosures", "manifest.json.sha256")], differ)
+
+        # The manifests differ in exactly the two recorded source digests ...
+        rel = os.path.join(self.NAME, "disclosures", "manifest.json")
+        ma, mb = self.load(self.base, rel), self.load(self.new, rel)
+        diff = differing_leaves(ma, mb)
+        self.assertEqual({"builder.sha256", "registry.sha256"}, set(diff))
+        for d, m in ((self.base, ma), (self.new, mb)):
+            self.assertEqual(sha(os.path.join(d, "build_release.py")), m["builder"]["sha256"])
+            self.assertEqual(sha(os.path.join(d, "records.py")), m["registry"]["sha256"])
+        # ... and nowhere else, byte for byte: with the base digests put back,
+        # the new manifest serialises to the base manifest's exact bytes.
+        mb["builder"]["sha256"] = ma["builder"]["sha256"]
+        mb["registry"]["sha256"] = ma["registry"]["sha256"]
+        with open(os.path.join(self.base, rel), "rb") as f:
+            self.assertEqual(f.read(), json.dumps(mb, indent=2).encode())
+        # Each sidecar is the digest of its own manifest.
+        for d in (self.base, self.new):
+            with open(os.path.join(d, rel + ".sha256")) as f:
+                self.assertEqual(sha(os.path.join(d, rel)), f.read().split()[0])
+
+        # The freeze markers, outside the release tree, differ only in those
+        # digests and the manifest digest that follows from them.
+        diff = differing_leaves(self.load(self.base, "releases", f"{self.NAME}.json"),
+                                self.load(self.new, "releases", f"{self.NAME}.json"))
+        self.assertEqual({"release_builder.sha256", "registry_sha256",
+                          "namespaces.disclosures.builder.sha256",
+                          "namespaces.disclosures.manifest_sha256"}, set(diff))
+
+    def load(self, *parts):
+        with open(os.path.join(*parts)) as f:
+            return json.load(f)
+
+
 # ========================================================== registration
 
 class TestRegistration(Sandbox):
@@ -1013,6 +2047,17 @@ class TestRegistration(Sandbox):
             self.assertTrue(problems)
         else:
             self.assertEqual([], problems)
+
+    def test_the_repository_get_and_carry_registrations_are_checked(self):
+        """The shipped GET block is ABSENT or a valid registration, never a placeholder."""
+        if records.get_absent():
+            self.assertNotIn("get", [ns["name"] for ns in records.NAMESPACES])
+        else:
+            self.assertIsInstance(records.GET_REGISTRATION, dict)
+            self.assertEqual([], records.get_registration_problems())
+            self.assertIn("get", [ns["name"] for ns in records.NAMESPACES])
+        self.assertEqual([], records.registry_problems())
+        self.assertEqual([], records.carry_registration_problems())
 
     def test_a_half_completed_registration_is_refused(self):
         self.register(("v1",), bytes=None)
