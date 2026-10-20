@@ -198,7 +198,13 @@ DISCLOSURE_REGISTRATION = {
 # and the reason for the issue. Any value other than ABSENT or a complete
 # registration (None, {}, {"entries": []}, an UNREGISTERED placeholder entry, a
 # partly completed entry) is refused at REGISTRY.
-GET_REGISTRATION = ABSENT
+GET_REGISTRATION = {"entries": [
+    {"version": "1.0.1-public-draft-v6", "src": "Arkaya_GET_Schema_v6.json",
+     "sha256": "c1e1d4f74a5f892d09766235a474046f95f06c5f39f308b81336259ce79c8ae5",
+     "bytes": 28325, "document_date": "2026-10-13", "media_type": "application/schema+json",
+     "status": "Public draft for comment, 21 days from publication; not approved; not a candidate. The current candidate is editorial revision v5 (normative version 1.0). Published by Arkaya Risk Limited for Arkaya Risk (Holdings) Limited as Temporary Custodian of the Governance Evidence Taxonomy and Founding Assessor, with the author's written permission.",
+     "reason": 'Correction-only editorial revision of normative version 1.0, published as a public draft for comment. © David McKibbin 2026. All rights reserved; no licence to implement or redistribute is granted by this publication. Ownership is intended to pass to Arkaya Risk (Holdings) Ltd and thereafter to an independent custodian under the Schema Independence Charter; a licence will accompany the ratified release.'},
+]}
 # END GET REGISTRATION
 
 
@@ -218,7 +224,10 @@ NAMESPACES = tuple(ns for ns in ALL_NAMESPACES
 # built. An entry, keyed by namespace name, is
 #   {"carried_from_release": <published release>, "published_sequence": <int>,
 #    "published_manifest_sha256": <that release's published manifest digest>}
-CARRY_REGISTRATION = {}
+CARRY_REGISTRATION = {
+    "disclosures": {"carried_from_release": "publish-005", "published_sequence": 3,
+                    "published_manifest_sha256": "9c0c1777479f867a5562532d508874e656acfb56e6d8a341ce5c546c6c07e2b9"},
+}
 # END CARRY REGISTRATION
 
 

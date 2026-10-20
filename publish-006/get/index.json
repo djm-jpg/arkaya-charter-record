@@ -1,0 +1,36 @@
+{
+  "schema": "arkaya-get-record/1",
+  "record": "Arkaya Governance Evidence Taxonomy (GET) schema",
+  "namespace": "get",
+  "canonical_uri": "https://record.arkayarisk.com/get/",
+  "as_of": "2026-10-20",
+  "as_of_caveat": "as_of states the position asserted by this issue of the GET schema record on that date. It does not warrant the absence of later schema issues that have not yet been published to this record.",
+  "sequence": 1,
+  "retention": "Each published schema issue, publication index and associated integrity record is retained permanently as part of Arkaya's governance record. Recipients may retain independent copies for evidential and verification purposes.",
+  "not_asserted": "Publication records the documentary state of each schema issue and its publication metadata. It does not ratify any issue, it does not make a draft normative, and it does not establish that any implementation conforms to it. Each issue's status is stated as registered, not inferred.",
+  "definitions": {
+    "version": "The version slug of the issue, which is also its path under this record. A documentary label, not a claim about compatibility with any other issue.",
+    "document_date": "The date stated for that issue of the schema. A documentary fact about the document, not a finding about anything it describes.",
+    "status": "The status of the issue as registered when it was published, for example a public draft for comment.",
+    "published_to_record": "The date that issue was released to this record at its canonical address. No earlier publication date is asserted. Evidence that the record was reachable at the canonical address on that date, and matched this manifest, is retained in this record's own publication ledger. This field is not itself that evidence.",
+    "sequence": "The revision number of this record's index. It is this record's own counter, advances by one whenever an index differing in any published field is made current, and is never reused for different content.",
+    "content_digest": "The SHA-256 of the file exactly as served. Each schema file is served with its bytes exactly as registered: no newline, encoding or byte-order-mark change."
+  },
+  "entries": [
+    {
+      "version": "1.0.1-public-draft-v6",
+      "document_date": "2026-10-13",
+      "published_to_record": "2026-10-20",
+      "status": "Public draft for comment, 21 days from publication; not approved; not a candidate. The current candidate is editorial revision v5 (normative version 1.0). Published by Arkaya Risk Limited for Arkaya Risk (Holdings) Limited as Temporary Custodian of the Governance Evidence Taxonomy and Founding Assessor, with the author's written permission.",
+      "reason": "Correction-only editorial revision of normative version 1.0, published as a public draft for comment. \u00a9 David McKibbin 2026. All rights reserved; no licence to implement or redistribute is granted by this publication. Ownership is intended to pass to Arkaya Risk (Holdings) Ltd and thereafter to an independent custodian under the Schema Independence Charter; a licence will accompany the ratified release.",
+      "predecessor": null,
+      "is_current": true,
+      "entry_url": "1.0.1-public-draft-v6/Arkaya_GET_Schema_v6.json",
+      "canonical_uri": "https://record.arkayarisk.com/get/1.0.1-public-draft-v6/Arkaya_GET_Schema_v6.json",
+      "mime_type": "application/schema+json",
+      "content_digest": "sha256:c1e1d4f74a5f892d09766235a474046f95f06c5f39f308b81336259ce79c8ae5",
+      "bytes": 28325,
+      "source": "inputs/get/Arkaya_GET_Schema_v6.json"
+    }
+  ]
+}
