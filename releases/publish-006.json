@@ -53,6 +53,14 @@
       ]
     }
   },
-  "published": false,
-  "state": "frozen release candidate; not deployed, not published"
+  "published": true,
+  "state": "published; recorded from live evidence",
+  "release_commit": "678aad800ba9849fa26651b927a107de7aa03fd3",
+  "release_tag": "release-007",
+  "bound_at": "2026-10-20T21:26:37.025867+00:00",
+  "binding_bound": "binds this frozen release to a commit identifier supplied by the operator. It does not verify that the commit exists in any repository, or that the repository holds these bytes.",
+  "published_on": "2026-10-20",
+  "publication_snapshots": {
+    "get": "ledgers/get/publications/1/"
+  }
 }

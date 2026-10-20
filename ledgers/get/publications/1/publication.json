@@ -1,0 +1,51 @@
+{
+  "schema": "arkaya-publication/2",
+  "namespace": "get",
+  "sequence": 1,
+  "published_on": "2026-10-20",
+  "recorded_at": "2026-10-20T21:54:26.484965+00:00",
+  "release": "publish-006",
+  "canonical_uri": "https://record.arkayarisk.com/get/",
+  "canonical_root": "https://record.arkayarisk.com/",
+  "deploy_id": "6ad7e1575794138d4ceee5ab",
+  "deploy_permalink": "https://6ad7e1575794138d4ceee5ab--arkaya-record.netlify.app",
+  "release_commit": "678aad800ba9849fa26651b927a107de7aa03fd3",
+  "release_tag": "release-007",
+  "release_bound_at": "2026-10-20T21:26:37.025867+00:00",
+  "manifest_sha256": "071791cc7c4a9ce27308dac097899b703d33fe9e396ea0ae3f6495d0fae5b2f1",
+  "index_sha256": "ab0edb8123c816eb6b0ef055aed5ded10db5fb221584ef2ec5e7a1ae7e77db37",
+  "evidence": "live_verification_20261020T215250.json",
+  "test_input": false,
+  "namespaces": {
+    "get": {
+      "state": "published at this sequence",
+      "sequence": 1,
+      "manifest_sha256": "071791cc7c4a9ce27308dac097899b703d33fe9e396ea0ae3f6495d0fae5b2f1",
+      "index_sha256": "ab0edb8123c816eb6b0ef055aed5ded10db5fb221584ef2ec5e7a1ae7e77db37",
+      "first_publication_entries": [
+        "1.0.1-public-draft-v6"
+      ]
+    },
+    "charter": {
+      "state": "carried unchanged",
+      "carried_from_release": "publish",
+      "sequence": 1,
+      "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+      "index_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+      "first_publication_entries": [],
+      "ledgers_written": false,
+      "note": "The Charter was carried byte-identical from its published release and verified live as the published Charter. It was not published again: its first-publication dates, index ledger and snapshots are unchanged."
+    },
+    "disclosures": {
+      "state": "carried unchanged",
+      "carried_from_release": "publish-005",
+      "sequence": 3,
+      "manifest_sha256": "9c0c1777479f867a5562532d508874e656acfb56e6d8a341ce5c546c6c07e2b9",
+      "index_sha256": "6d35a4fa7fdd393e84f795aa4c923d47244d9d5581970f5b9fbfc5c85c232e6a",
+      "first_publication_entries": [],
+      "ledgers_written": false,
+      "note": "The disclosures record was carried byte-identical from the release that published it and verified live as that published record. It was not published again: its first-publication dates, index ledger and snapshots are unchanged."
+    }
+  },
+  "basis": "recorded from a passing, approved live verification of every namespace of the frozen release at the canonical address on the release date, with the Charter verified as the published Charter and every release object validated immediately before recording"
+}

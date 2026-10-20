@@ -1,0 +1,11 @@
+{
+  "note": "First publication date per get version, recorded only by record_publication.py against live evidence. This is the get record's own ledger.",
+  "versions": {
+    "1.0.1-public-draft-v6": {
+      "first_published": "2026-10-20",
+      "sequence": 1,
+      "recorded_at": "2026-10-20T21:54:26.484965+00:00",
+      "evidence": "ledgers/get/publications/1/live_verification.json"
+    }
+  }
+}
