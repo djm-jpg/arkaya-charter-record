@@ -35,7 +35,10 @@
       "snapshot": "ledgers/disclosures/publications/3/",
       "release": "publish-005",
       "deploy_id": "6ad784d07912d63c015c1353",
-      "release_commit": "a7ebe843aa8fd17e204dad95c404635f8c70401b"
+      "release_commit": "a7ebe843aa8fd17e204dad95c404635f8c70401b",
+      "publication_evidence_tag": "publication-005",
+      "publication_evidence_commit": "f5aa2cb0717896a6b8dc41976b6c3b8a896bab86",
+      "evidence_tag_recorded_at": "2026-10-20T15:38:45.348181+00:00"
     }
   }
 }
