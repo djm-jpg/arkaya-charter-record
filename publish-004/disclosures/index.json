@@ -1,0 +1,66 @@
+{
+  "schema": "arkaya-disclosure-record/1",
+  "record": "Founding-period schema decisions taken in concurrent capacities",
+  "record_slug": "conflicted-decisions",
+  "namespace": "disclosures",
+  "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+  "as_of": "2026-10-20",
+  "as_of_caveat": "as_of states the position asserted by this issue of the disclosure record on that date. It does not warrant the absence of later disclosures that have not yet been published to this record.",
+  "sequence": 3,
+  "retention": "Each published disclosure, publication index and associated integrity record is retained permanently as part of Arkaya's governance record. Recipients may retain independent copies for evidential and verification purposes.",
+  "not_asserted": "Publication records the documentary state of each disclosure and its publication metadata. It does not validate the substance of any disclosure, and it does not establish that any control described in a disclosure operated as described.",
+  "definitions": {
+    "document_date": "The date printed on that issue of the disclosure. A documentary fact about the document, not a finding about the period it describes.",
+    "published_to_record": "The date that issue was released to this disclosure record at its canonical address. No earlier publication date is asserted. Evidence that the record was reachable at the canonical address on that date, and matched this manifest, is retained in this record's own publication ledger. This field is not itself that evidence.",
+    "sequence": "The revision number of this disclosure record's index. It is this record's own counter, advances by one whenever an index differing in any published field is made current, and is never reused for different content."
+  },
+  "entries": [
+    {
+      "version": "v3",
+      "document_date": "2026-09-28",
+      "published_to_record": "2026-09-28",
+      "reason": null,
+      "predecessor": null,
+      "is_current": false,
+      "status": "superseded",
+      "entry_url": "conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "mime_type": "text/markdown",
+      "content_digest": "sha256:10400912d65cf1bfd584322874d7f178949d209f0157072908be872076926c64",
+      "bytes": 28593,
+      "source": "inputs/disclosures/conflicted-decisions-v3.md",
+      "superseded_by": "v4"
+    },
+    {
+      "version": "v4",
+      "document_date": "2026-10-15",
+      "published_to_record": "2026-10-15",
+      "reason": "Successor issue: discloses decisions taken since v3 and the disclosure misses since. v3's entries are not repeated; v3 remains published and unchanged.",
+      "predecessor": "v3",
+      "is_current": false,
+      "status": "superseded",
+      "entry_url": "conflicted-decisions/v4/conflicted-decisions-v4.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v4/conflicted-decisions-v4.md",
+      "mime_type": "text/markdown",
+      "content_digest": "sha256:27e0f46a33025cd16e4375d965d79f1ddd5e12c63d9b0ffe3d4e321f875c39ec",
+      "bytes": 23173,
+      "source": "inputs/disclosures/conflicted-decisions-v4.md",
+      "superseded_by": "v5"
+    },
+    {
+      "version": "v5",
+      "document_date": "2026-10-19",
+      "published_to_record": "2026-10-20",
+      "reason": "Successor issue: discloses decisions taken since v4, two corrections to v4 and one disclosure-queue lapse. v3's and v4's entries are not repeated and are not superseded; v3 and v4 remain published and unchanged.",
+      "predecessor": "v4",
+      "is_current": true,
+      "status": "current",
+      "entry_url": "conflicted-decisions/v5/conflicted-decisions-v5.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v5/conflicted-decisions-v5.md",
+      "mime_type": "text/markdown",
+      "content_digest": "sha256:4e62c19b004994ae82434f58259ee2ffbd08130ef7f199b0962c483f6665a8ed",
+      "bytes": 16245,
+      "source": "inputs/disclosures/conflicted-decisions-v5.md"
+    }
+  ]
+}
