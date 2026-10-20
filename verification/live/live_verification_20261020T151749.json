@@ -1,0 +1,699 @@
+{
+  "verified_at": "2026-10-20T15:17:49.653785+00:00",
+  "base": "https://record.arkayarisk.com/",
+  "canonical_uri": "https://record.arkayarisk.com/",
+  "rehearsal": false,
+  "release": "publish-005",
+  "release_schema": "arkaya-release/2",
+  "release_frozen": true,
+  "release_date": "2026-10-20",
+  "test_input": false,
+  "root_pointer_sha256": "5c2a1b8c55c16183d4a94deff459617f48394346ce69254550d33ba2206dd787",
+  "served_root_pointer_sha256": "5c2a1b8c55c16183d4a94deff459617f48394346ce69254550d33ba2206dd787",
+  "namespaces": {
+    "charter": {
+      "mode": "carried",
+      "base": "https://record.arkayarisk.com/charter/",
+      "canonical_uri": "https://record.arkayarisk.com/charter/",
+      "sequence": 1,
+      "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+      "served_manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+      "passed": true,
+      "findings": []
+    },
+    "disclosures": {
+      "mode": "built",
+      "base": "https://record.arkayarisk.com/disclosures/",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+      "sequence": 3,
+      "manifest_sha256": "9c0c1777479f867a5562532d508874e656acfb56e6d8a341ce5c546c6c07e2b9",
+      "served_manifest_sha256": "9c0c1777479f867a5562532d508874e656acfb56e6d8a341ce5c546c6c07e2b9",
+      "passed": true,
+      "findings": []
+    }
+  },
+  "charter_identity": {
+    "published_manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+    "local_manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+    "served_manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+    "passed": true
+  },
+  "release_builder": {
+    "script": "build_release.py",
+    "source_path": "build_release.py",
+    "version": "2026-09-28.1",
+    "sha256": "d973186ccf98bd63a22815cf0eaf8b36915e51caf01e44779bf3555717765f6d"
+  },
+  "passed": true,
+  "production_approval": true,
+  "approval_blockers": [],
+  "checks_not_exercised": [],
+  "checks": [
+    {
+      "check": "registry describes a valid release",
+      "passed": true,
+      "detail": "2 namespaces, Charter carried"
+    },
+    {
+      "check": "local release is frozen",
+      "passed": true,
+      "detail": "frozen release publish-005, 2 namespaces, dated 2026-10-20"
+    },
+    {
+      "check": "the release carries the Charter",
+      "passed": true,
+      "detail": "charter/ present and frozen"
+    },
+    {
+      "check": "[root] https reachable",
+      "passed": true,
+      "detail": "status 200, final URL https://record.arkayarisk.com/"
+    },
+    {
+      "check": "[root] http redirects to the same https address",
+      "passed": true,
+      "detail": "status 200, final URL https://record.arkayarisk.com/, expected https://record.arkayarisk.com/"
+    },
+    {
+      "check": "[root] strict-transport-security present",
+      "passed": true,
+      "detail": "max-age=31536000"
+    },
+    {
+      "check": "deploy root serves the pointer page linking every record",
+      "passed": true,
+      "detail": "status 200; links /charter/, /disclosures/"
+    },
+    {
+      "check": "deploy root is not a directory listing",
+      "passed": true,
+      "detail": "not a listing"
+    },
+    {
+      "check": "deploy root page matches the frozen pointer",
+      "passed": true,
+      "detail": "frozen 5c2a1b8c55c16183\u2026 served 5c2a1b8c55c16183\u2026"
+    },
+    {
+      "check": "[charter] https reachable",
+      "passed": true,
+      "detail": "status 200, final URL https://record.arkayarisk.com/charter/"
+    },
+    {
+      "check": "[charter] http redirects to the same https address",
+      "passed": true,
+      "detail": "status 200, final URL https://record.arkayarisk.com/charter/, expected https://record.arkayarisk.com/charter/"
+    },
+    {
+      "check": "[charter] strict-transport-security present",
+      "passed": true,
+      "detail": "max-age=31536000"
+    },
+    {
+      "check": "[charter] landing page body matches index.html",
+      "passed": true,
+      "detail": "expected 84770dcb5e0d45bc\u2026 served 84770dcb5e0d45bc\u2026"
+    },
+    {
+      "check": "[charter] landing page content-type",
+      "passed": true,
+      "detail": "expected text/html, served text/html"
+    },
+    {
+      "check": "[charter] served manifest matches the frozen manifest",
+      "passed": true,
+      "detail": "frozen b926170e96be40ce\u2026 served b926170e96be40ce\u2026"
+    },
+    {
+      "check": "[charter] served sidecar matches the served manifest",
+      "passed": true,
+      "detail": "sidecar b926170e96be40ce\u2026 served manifest b926170e96be40ce\u2026"
+    },
+    {
+      "check": "[charter] served sidecar matches the frozen manifest",
+      "passed": true,
+      "detail": "sidecar b926170e96be40ce\u2026 frozen b926170e96be40ce\u2026"
+    },
+    {
+      "check": "[charter] digest v1/charter-v1.pdf",
+      "passed": true,
+      "detail": "manifest 03794ff916330d36\u2026 served 03794ff916330d36\u2026"
+    },
+    {
+      "check": "[charter] bytes v1/charter-v1.pdf",
+      "passed": true,
+      "detail": "manifest 137752 served 137752"
+    },
+    {
+      "check": "[charter] content-type v1/charter-v1.pdf",
+      "passed": true,
+      "detail": "expected application/pdf, served application/pdf"
+    },
+    {
+      "check": "[charter] digest v1.1/charter-v1.1.pdf",
+      "passed": true,
+      "detail": "manifest 2d55ac0b81e07fee\u2026 served 2d55ac0b81e07fee\u2026"
+    },
+    {
+      "check": "[charter] bytes v1.1/charter-v1.1.pdf",
+      "passed": true,
+      "detail": "manifest 145462 served 145462"
+    },
+    {
+      "check": "[charter] content-type v1.1/charter-v1.1.pdf",
+      "passed": true,
+      "detail": "expected application/pdf, served application/pdf"
+    },
+    {
+      "check": "[charter] digest v2/charter-v2.pdf",
+      "passed": true,
+      "detail": "manifest 1df3e103e94515c5\u2026 served 1df3e103e94515c5\u2026"
+    },
+    {
+      "check": "[charter] bytes v2/charter-v2.pdf",
+      "passed": true,
+      "detail": "manifest 151068 served 151068"
+    },
+    {
+      "check": "[charter] content-type v2/charter-v2.pdf",
+      "passed": true,
+      "detail": "expected application/pdf, served application/pdf"
+    },
+    {
+      "check": "[charter] digest v3/charter-v3.pdf",
+      "passed": true,
+      "detail": "manifest 751972efbfa4fb60\u2026 served 751972efbfa4fb60\u2026"
+    },
+    {
+      "check": "[charter] bytes v3/charter-v3.pdf",
+      "passed": true,
+      "detail": "manifest 154947 served 154947"
+    },
+    {
+      "check": "[charter] content-type v3/charter-v3.pdf",
+      "passed": true,
+      "detail": "expected application/pdf, served application/pdf"
+    },
+    {
+      "check": "[charter] digest index.json",
+      "passed": true,
+      "detail": "manifest 8f5fc27deb886815\u2026 served 8f5fc27deb886815\u2026"
+    },
+    {
+      "check": "[charter] bytes index.json",
+      "passed": true,
+      "detail": "manifest 5525 served 5525"
+    },
+    {
+      "check": "[charter] content-type index.json",
+      "passed": true,
+      "detail": "expected application/json, served application/json"
+    },
+    {
+      "check": "[charter] digest index.html",
+      "passed": true,
+      "detail": "manifest 84770dcb5e0d45bc\u2026 served 84770dcb5e0d45bc\u2026"
+    },
+    {
+      "check": "[charter] bytes index.html",
+      "passed": true,
+      "detail": "manifest 6678 served 6678"
+    },
+    {
+      "check": "[charter] content-type index.html",
+      "passed": true,
+      "detail": "expected text/html, served text/html"
+    },
+    {
+      "check": "[charter] digest README.md",
+      "passed": true,
+      "detail": "manifest b666a29e9c69ff87\u2026 served b666a29e9c69ff87\u2026"
+    },
+    {
+      "check": "[charter] bytes README.md",
+      "passed": true,
+      "detail": "manifest 5711 served 5711"
+    },
+    {
+      "check": "[charter] content-type README.md",
+      "passed": true,
+      "detail": "expected text/markdown, served text/markdown"
+    },
+    {
+      "check": "[charter] control path 404s",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "charter identity: the published Charter manifest snapshot is available",
+      "passed": true,
+      "detail": "publications/1/manifest.json hashes to the registered digest"
+    },
+    {
+      "check": "charter identity: local Charter manifest is the published manifest",
+      "passed": true,
+      "detail": "published b926170e96be40ce\u2026 local b926170e96be40ce\u2026"
+    },
+    {
+      "check": "charter identity: served Charter manifest is the published manifest",
+      "passed": true,
+      "detail": "published b926170e96be40ce\u2026 served b926170e96be40ce\u2026"
+    },
+    {
+      "check": "charter identity: every served Charter object is the published object",
+      "passed": true,
+      "detail": "all published objects served unchanged"
+    },
+    {
+      "check": "[disclosures] https reachable",
+      "passed": true,
+      "detail": "status 200, final URL https://record.arkayarisk.com/disclosures/"
+    },
+    {
+      "check": "[disclosures] http redirects to the same https address",
+      "passed": true,
+      "detail": "status 200, final URL https://record.arkayarisk.com/disclosures/, expected https://record.arkayarisk.com/disclosures/"
+    },
+    {
+      "check": "[disclosures] strict-transport-security present",
+      "passed": true,
+      "detail": "max-age=31536000"
+    },
+    {
+      "check": "[disclosures] landing page body matches index.html",
+      "passed": true,
+      "detail": "expected 4b58741e30b079c6\u2026 served 4b58741e30b079c6\u2026"
+    },
+    {
+      "check": "[disclosures] landing page content-type",
+      "passed": true,
+      "detail": "expected text/html, served text/html"
+    },
+    {
+      "check": "[disclosures] served manifest matches the frozen manifest",
+      "passed": true,
+      "detail": "frozen 9c0c1777479f867a\u2026 served 9c0c1777479f867a\u2026"
+    },
+    {
+      "check": "[disclosures] served sidecar matches the served manifest",
+      "passed": true,
+      "detail": "sidecar 9c0c1777479f867a\u2026 served manifest 9c0c1777479f867a\u2026"
+    },
+    {
+      "check": "[disclosures] served sidecar matches the frozen manifest",
+      "passed": true,
+      "detail": "sidecar 9c0c1777479f867a\u2026 frozen 9c0c1777479f867a\u2026"
+    },
+    {
+      "check": "[disclosures] digest conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "passed": true,
+      "detail": "manifest 10400912d65cf1bf\u2026 served 10400912d65cf1bf\u2026"
+    },
+    {
+      "check": "[disclosures] bytes conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "passed": true,
+      "detail": "manifest 28593 served 28593"
+    },
+    {
+      "check": "[disclosures] content-type conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "passed": true,
+      "detail": "expected text/markdown, served text/markdown"
+    },
+    {
+      "check": "[disclosures] digest conflicted-decisions/v4/conflicted-decisions-v4.md",
+      "passed": true,
+      "detail": "manifest 27e0f46a33025cd1\u2026 served 27e0f46a33025cd1\u2026"
+    },
+    {
+      "check": "[disclosures] bytes conflicted-decisions/v4/conflicted-decisions-v4.md",
+      "passed": true,
+      "detail": "manifest 23173 served 23173"
+    },
+    {
+      "check": "[disclosures] content-type conflicted-decisions/v4/conflicted-decisions-v4.md",
+      "passed": true,
+      "detail": "expected text/markdown, served text/markdown"
+    },
+    {
+      "check": "[disclosures] digest conflicted-decisions/v5/conflicted-decisions-v5.md",
+      "passed": true,
+      "detail": "manifest a4362e1e9fa0ea48\u2026 served a4362e1e9fa0ea48\u2026"
+    },
+    {
+      "check": "[disclosures] bytes conflicted-decisions/v5/conflicted-decisions-v5.md",
+      "passed": true,
+      "detail": "manifest 16336 served 16336"
+    },
+    {
+      "check": "[disclosures] content-type conflicted-decisions/v5/conflicted-decisions-v5.md",
+      "passed": true,
+      "detail": "expected text/markdown, served text/markdown"
+    },
+    {
+      "check": "[disclosures] digest index.json",
+      "passed": true,
+      "detail": "manifest 6d35a4fa7fdd393e\u2026 served 6d35a4fa7fdd393e\u2026"
+    },
+    {
+      "check": "[disclosures] bytes index.json",
+      "passed": true,
+      "detail": "manifest 4116 served 4116"
+    },
+    {
+      "check": "[disclosures] content-type index.json",
+      "passed": true,
+      "detail": "expected application/json, served application/json"
+    },
+    {
+      "check": "[disclosures] digest index.html",
+      "passed": true,
+      "detail": "manifest 4b58741e30b079c6\u2026 served 4b58741e30b079c6\u2026"
+    },
+    {
+      "check": "[disclosures] bytes index.html",
+      "passed": true,
+      "detail": "manifest 5700 served 5700"
+    },
+    {
+      "check": "[disclosures] content-type index.html",
+      "passed": true,
+      "detail": "expected text/html, served text/html"
+    },
+    {
+      "check": "[disclosures] control path 404s",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: build_publication_set.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/build_publication_set.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/build_publication_set.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: package.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/package.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/package.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: record_publication.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/record_publication.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/record_publication.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: README_source.md",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/README_source.md",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/README_source.md",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: first_publication.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/first_publication.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/first_publication.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: published_indexes.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/published_indexes.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/published_indexes.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: releases/publish.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/releases/publish.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/releases/publish.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: verification/PRODUCTION_RECORD.md",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/verification/PRODUCTION_RECORD.md",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/verification/PRODUCTION_RECORD.md",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: build_release.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/build_release.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/build_release.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: records.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/records.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/records.py",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: releases/publish-005.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/releases/publish-005.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/releases/publish-005.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: ledgers/disclosures/first_publication.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/ledgers/disclosures/first_publication.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/ledgers/disclosures/first_publication.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: ledgers/disclosures/published_indexes.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: charter/ledgers/disclosures/published_indexes.json",
+      "passed": true,
+      "detail": "status 404"
+    },
+    {
+      "check": "internal file not served: disclosures/ledgers/disclosures/published_indexes.json",
+      "passed": true,
+      "detail": "status 404"
+    }
+  ],
+  "findings": [],
+  "served": {
+    "charter": {
+      "v1/charter-v1.pdf": {
+        "sha256": "03794ff916330d36e551ccb0d98a173c5205e98c27eb35124a7466eedc776e6e",
+        "bytes": 137752,
+        "content_type": "application/pdf",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"e5098559335f12653347b4618acc2669-ssl\"",
+        "last_modified": null
+      },
+      "v1.1/charter-v1.1.pdf": {
+        "sha256": "2d55ac0b81e07fee580e4784126c2d581b7acaec70ee55f84f5f0bec1bac0897",
+        "bytes": 145462,
+        "content_type": "application/pdf",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"2ef1301a4c11477eae69d3b7a14bb767-ssl\"",
+        "last_modified": null
+      },
+      "v2/charter-v2.pdf": {
+        "sha256": "1df3e103e94515c5fbaf8792c5f09f4b539cd919ed65d7d3892d3001fc1ca12b",
+        "bytes": 151068,
+        "content_type": "application/pdf",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"6c17bb3b51b132aa0bf2714df70c65d6-ssl\"",
+        "last_modified": null
+      },
+      "v3/charter-v3.pdf": {
+        "sha256": "751972efbfa4fb6070b6c9b36f289211937cfcf97724511743a1e1251d752ba5",
+        "bytes": 154947,
+        "content_type": "application/pdf",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"6111d47d25f816b3642710d3ff7b91d9-ssl\"",
+        "last_modified": null
+      },
+      "index.json": {
+        "sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+        "bytes": 5525,
+        "content_type": "application/json",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"5a52e7aed545ff4f296013f86846c92a-ssl\"",
+        "last_modified": null
+      },
+      "index.html": {
+        "sha256": "84770dcb5e0d45bca3bc5874129745378f17751925a33d5ec9befea3249127c0",
+        "bytes": 6678,
+        "content_type": "text/html",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"2093352d18a1142137580d2472405192-ssl\"",
+        "last_modified": null
+      },
+      "README.md": {
+        "sha256": "b666a29e9c69ff87871dd63c17946cf98cec9f3d5d3aa13b0780501c7ff23cbf",
+        "bytes": 5711,
+        "content_type": "text/markdown",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"fcaa3965a77acbf100d73ec77822e34f-ssl\"",
+        "last_modified": null
+      }
+    },
+    "disclosures": {
+      "conflicted-decisions/v3/conflicted-decisions-v3.md": {
+        "sha256": "10400912d65cf1bfd584322874d7f178949d209f0157072908be872076926c64",
+        "bytes": 28593,
+        "content_type": "text/markdown",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"4fb63a87da331632e1c88f7fbb277103-ssl\"",
+        "last_modified": null
+      },
+      "conflicted-decisions/v4/conflicted-decisions-v4.md": {
+        "sha256": "27e0f46a33025cd16e4375d965d79f1ddd5e12c63d9b0ffe3d4e321f875c39ec",
+        "bytes": 23173,
+        "content_type": "text/markdown",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"8fea9eb859ac9f2061e8d05ca9ae8962-ssl\"",
+        "last_modified": null
+      },
+      "conflicted-decisions/v5/conflicted-decisions-v5.md": {
+        "sha256": "a4362e1e9fa0ea481f3340d54a9f840dbdf7b4efcab6fef79b5413f0e5a0d1fa",
+        "bytes": 16336,
+        "content_type": "text/markdown",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"f700adb7f245327451df06e9dbbb4609-ssl\"",
+        "last_modified": null
+      },
+      "index.json": {
+        "sha256": "6d35a4fa7fdd393e84f795aa4c923d47244d9d5581970f5b9fbfc5c85c232e6a",
+        "bytes": 4116,
+        "content_type": "application/json",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"15f30abe551268e0915895a6fa3261dc-ssl\"",
+        "last_modified": null
+      },
+      "index.html": {
+        "sha256": "4b58741e30b079c6d4575456f50edcabb2c6ddea88ef7691276830c4bfd2abbf",
+        "bytes": 5700,
+        "content_type": "text/html",
+        "status": 200,
+        "cache_control": "public,max-age=0,must-revalidate",
+        "etag": "\"f7b110d25924681a9c248f0bbb3d577b-ssl\"",
+        "last_modified": null
+      }
+    }
+  },
+  "bound": "This verifies that what is served now matches the frozen manifest. It does not establish continuity: that requires the acceptance suite's accepted baseline and repeated observation over time."
+}

@@ -12,6 +12,12 @@
       "sequence": 2,
       "recorded_at": "2026-10-15T17:06:43.978548+00:00",
       "evidence": "ledgers/disclosures/publications/2/live_verification.json"
+    },
+    "v5": {
+      "first_published": "2026-10-20",
+      "sequence": 3,
+      "recorded_at": "2026-10-20T15:24:18.747924+00:00",
+      "evidence": "ledgers/disclosures/publications/3/live_verification.json"
     }
   }
 }
