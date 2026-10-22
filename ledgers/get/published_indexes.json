@@ -9,7 +9,10 @@
       "snapshot": "ledgers/get/publications/1/",
       "release": "publish-006",
       "deploy_id": "6ad7e1575794138d4ceee5ab",
-      "release_commit": "678aad800ba9849fa26651b927a107de7aa03fd3"
+      "release_commit": "678aad800ba9849fa26651b927a107de7aa03fd3",
+      "publication_evidence_tag": "publication-006",
+      "publication_evidence_commit": "98da0263d27e4b55934e3109fc6284714e4ed021",
+      "evidence_tag_recorded_at": "2026-10-22T12:23:38.602846+00:00"
     }
   }
 }
