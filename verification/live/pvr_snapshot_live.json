@@ -119,6 +119,18 @@
       ],
       "digest_mismatches": [],
       "missing_since_baseline": []
+    },
+    {
+      "at": "2026-10-23T12:49:25.784855+00:00",
+      "clean": true,
+      "versions": [
+        "v1",
+        "v1.1",
+        "v2",
+        "v3"
+      ],
+      "digest_mismatches": [],
+      "missing_since_baseline": []
     }
   ],
   "schema": "pvr-baseline/1",
@@ -129,7 +141,7 @@
       "v2": "sha256:1df3e103e94515c5fbaf8792c5f09f4b539cd919ed65d7d3892d3001fc1ca12b",
       "v3": "sha256:751972efbfa4fb6070b6c9b36f289211937cfcf97724511743a1e1251d752ba5"
     },
-    "at": "2026-10-22T12:23:48.115561+00:00",
+    "at": "2026-10-23T12:49:25.784855+00:00",
     "reason": "clean observation"
   },
   "state": "established"

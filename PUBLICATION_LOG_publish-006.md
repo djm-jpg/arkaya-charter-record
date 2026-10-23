@@ -112,8 +112,22 @@ Sections 7 to 9 were written by Claude on 22 October 2026 in a later session. Se
 3. **Upload by zip** after two wrong drags left two unpublished preview deploys in the Netlify history (section 3).
 4. **First freeze commit omitted the release record**; corrected before push (section 2).
 5. **The 20 October publication log draft and the D7 ledger change were held only in a session working copy and lost with it.** Neither was filed or committed on 20 October. The log is reproduced byte-exact (section 7); the D7 note was re-run with a true 22 October timestamp.
-6. **Parts E and F ran late.** Part E was due on 21 October and ran on 22 October; Part F, the next-day check, was due on 21 October and is scheduled for 23 October. Nothing public changed in the interval; the Charter comparison of 22 October passed 12 of 12.
+6. **Parts E and F ran late.** Part E was due on 21 October and ran on 22 October; Part F, the next-day check, was due on 21 October and is scheduled for 23 October. Nothing public changed in the interval; the Charter comparison of 22 October passed 12 of 12. Part F ran on 23 October from 13:49 BST, after the 09:30 slot and after the "before 13:00" set at stop point 9; the 13:00 publication run waited for it.
+
+7. **F3 ran before F1.** The Charter comparison (F3) ran at 12:49:25Z and the authoritative live verification (F1) at 13:18:03Z; the runbook orders F1 first. Both read the same served state: F1 found every one of the 15 served objects byte-identical to the 20 October evidence, so the order changes nothing the checks establish.
 
 ## 9. Next-day checks (Part F)
 
-To follow on 23 October 2026.
+Written by Claude on 23 October 2026.
+
+| Field | Value | Step |
+|---|---|---|
+| Baseline, from Part E | BASELINE_COMMIT `91a39b81ec9753445aff2daa901e9c526c59a2dc`; BASELINE_TREE `28fdfeb1e2d6f3a178d4085e5ff359ae30b59cc3`; BASELINE_PATCH_SHA `45c06604…` (`OPS_BaselinePatch_publish-006_2026-10-22.patch`, 27,808 bytes, 99-Working), applied by DM at Block G, pushed at Block P | E5, Block F, E6 |
+| `evidence-010` | Annotated, unsigned, tag object `af77bb85fc421e5fa61b6728428738d249336e12` on BASELINE_COMMIT; tagger David McKibbin, 2026-10-22T13:08:20Z; pushed by DM at Block T | E6 |
+| Authoritative live verification | VERIFY `~/arkaya-verify-publish-006` on the operator's machine against `https://record.arkayarisk.com/`, 2026-10-23T13:18:03Z: **156/156 checks passed, PRODUCTION APPROVAL: GRANTED**, exit 0 | F1 |
+| Evidence | `verification/live/live_verification_20261023T131803.json`, 32,793 bytes, SHA-256 `d95e5c19c4f1f0ae48abe25abc05cc17934ebd073d040f74fdc7c9e853201c10`; copied to DROP by the operator, hashed on the device and again in the session, equal | F1-F2 |
+| Evidence fields | canonical base; release `publish-006`, frozen; `rehearsal: false`; `test_input: false`; `passed: true`; `production_approval: true`; no approval blockers, no findings, no unexercised checks; root pointer local and served `eaa510f9…73fb`, unchanged from 20 October; manifests published, local and served equal for charter `b926170e…2ac6` (carried), disclosures `9c0c1777…e2b9` (carried from publish-005) and GET `071791cc…b2f1` (built); all 15 served objects byte-identical to `live_verification_20261020T215250.json` | F2 |
+| Charter comparison | Section 6 command of the runbook, 2026-10-23T12:49:25Z: exit 0, live **12/12 PASS**, current `v3`, 4 versions; "baseline advanced"; `verification/live/pvr_snapshot_live.json` now `706eede6b74309fc6e2c8e1828654e33031c88ec6d18128f72c97933d4e5dbc4`. Full output `verification/live/charter_comparison_publish-006_F3.txt` (5,378 bytes, SHA-256 `d51d2bf34d443bf8a0ba9dc89c305fef28e3fc8abfd0ed14d72c8b317df22c34`), byte-identical to the E4 output. Ran before F1 (section 8, item 7) | F3 |
+| SWHID | Snapshot `swh:1:snp:ffd366d9050226eef723b3d07c8cb96962cb78ac`, visit 2026-10-22T12:33:33Z, read from the Software Heritage archive on 23 October. It holds `main` at `98da026` (PUBLICATION_COMMIT), `release-007`, `publication-006`, `release-006`, `publication-005` and `evidence-009`. It was taken before BASELINE_COMMIT and `evidence-010` were pushed, so it preserves the publication but not this baseline; neither `evidence-010` nor `evidence-011` is preserved there until a later visit | F4 |
+
+**Result.** The published state held unchanged from 20 to 23 October: all three namespaces served their frozen bytes, the Charter passed its acceptance suite, and no finding arose. This commit carries the next-day evidence and is tagged `evidence-011`.
