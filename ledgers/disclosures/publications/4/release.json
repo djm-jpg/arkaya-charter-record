@@ -1,0 +1,62 @@
+{
+  "schema": "arkaya-release/2",
+  "release_dir": "publish-007",
+  "release_date": "2026-10-26",
+  "built_at": "2026-10-26T08:49:53.404236+00:00",
+  "canonical_root": "https://record.arkayarisk.com/",
+  "root_pointer_sha256": "eaa510f937133ad0385c5b6c84af0017544259de2581d106596fbf32137673fb",
+  "release_builder": {
+    "script": "build_release.py",
+    "source_path": "build_release.py",
+    "version": "2026-09-28.1",
+    "sha256": "e7d57fbc274eaeea0e02d7741a7607e00ed92607fcf4fe7f66a34c517e6a669e"
+  },
+  "registry_sha256": "ec1a1f59cc52b3ecd0bb2bcb05d6b48cd936609b290cdc138c151ca48fc5f2fc",
+  "date_mismatch_reason": null,
+  "test_input": false,
+  "namespaces": {
+    "charter": {
+      "mode": "carried",
+      "path": "charter",
+      "carried_from_release": "publish",
+      "sequence": 1,
+      "canonical_uri": "https://record.arkayarisk.com/charter/",
+      "manifest_sha256": "b926170e96be40ce35b3e2528bb6fba2a584f79676d8251884b660af3e942ac6",
+      "index_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+      "versions_awaiting_first_publication": []
+    },
+    "disclosures": {
+      "mode": "built",
+      "path": "disclosures",
+      "sequence": 4,
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+      "manifest_sha256": "ff0c3dab1ac4fb9a5144298ecec2c52c1882b336beeffc64c0be328ce779b6aa",
+      "index_sha256": "8f0671068cbdf45d35415c89cf3734ae8ed7d8f33692e14258127a74e0a81d48",
+      "builder": {
+        "script": "build_release.py",
+        "source_path": "build_release.py",
+        "version": "2026-09-28.1",
+        "sha256": "e7d57fbc274eaeea0e02d7741a7607e00ed92607fcf4fe7f66a34c517e6a669e"
+      },
+      "versions_awaiting_first_publication": [
+        "v6"
+      ]
+    },
+    "get": {
+      "mode": "carried",
+      "path": "get",
+      "carried_from_release": "publish-006",
+      "sequence": 1,
+      "canonical_uri": "https://record.arkayarisk.com/get/",
+      "manifest_sha256": "071791cc7c4a9ce27308dac097899b703d33fe9e396ea0ae3f6495d0fae5b2f1",
+      "index_sha256": "ab0edb8123c816eb6b0ef055aed5ded10db5fb221584ef2ec5e7a1ae7e77db37",
+      "versions_awaiting_first_publication": []
+    }
+  },
+  "published": false,
+  "state": "frozen release candidate; not deployed, not published",
+  "release_commit": "8afb76ebf376887a54e03cc94697ecc4b09f6bb4",
+  "release_tag": "release-008",
+  "bound_at": "2026-10-26T09:02:51.190715+00:00",
+  "binding_bound": "binds this frozen release to a commit identifier supplied by the operator. It does not verify that the commit exists in any repository, or that the repository holds these bytes."
+}

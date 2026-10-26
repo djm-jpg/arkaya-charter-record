@@ -1,0 +1,122 @@
+{
+  "schema": "arkaya-disclosure-manifest/1",
+  "record": "Founding-period schema decisions taken in concurrent capacities",
+  "namespace": "disclosures",
+  "as_of": "2026-10-26",
+  "sequence": 4,
+  "canonical_uri": "https://record.arkayarisk.com/disclosures/",
+  "provenance_claim": "The manifest records the release builder and its digest, the namespace registry and its digest, the registered inputs with their digests, and the build parameters. Matching digests identify the supplied builder and registry and show that the shipped objects stand in the expected relationship to the registered inputs. They do not independently prove that this builder historically executed.",
+  "builder": {
+    "script": "build_release.py",
+    "source_path": "build_release.py",
+    "version": "2026-09-28.1",
+    "sha256": "e7d57fbc274eaeea0e02d7741a7607e00ed92607fcf4fe7f66a34c517e6a669e"
+  },
+  "registry": {
+    "path": "records.py",
+    "sha256": "ec1a1f59cc52b3ecd0bb2bcb05d6b48cd936609b290cdc138c151ca48fc5f2fc"
+  },
+  "build_parameters": {
+    "built_at": "2026-10-26T08:49:53.404236+00:00",
+    "python": "3.13.17",
+    "platform": "Linux-6.18.44-fc-v153-x86_64-with-glibc2.39",
+    "PVR_RELEASE_DATE": "2026-10-26",
+    "sequence": 4,
+    "date_mismatch_reason": null,
+    "test_input": false
+  },
+  "inputs": [
+    {
+      "path": "inputs/disclosures/conflicted-decisions-v3.md",
+      "sha256": "10400912d65cf1bfd584322874d7f178949d209f0157072908be872076926c64",
+      "bytes": 28593,
+      "version": "v3"
+    },
+    {
+      "path": "inputs/disclosures/conflicted-decisions-v4.md",
+      "sha256": "27e0f46a33025cd16e4375d965d79f1ddd5e12c63d9b0ffe3d4e321f875c39ec",
+      "bytes": 23173,
+      "version": "v4"
+    },
+    {
+      "path": "inputs/disclosures/conflicted-decisions-v5.md",
+      "sha256": "a4362e1e9fa0ea481f3340d54a9f840dbdf7b4efcab6fef79b5413f0e5a0d1fa",
+      "bytes": 16336,
+      "version": "v5"
+    },
+    {
+      "path": "inputs/disclosures/conflicted-decisions-v6.md",
+      "sha256": "746e4952301b7c56a1b52572a4913c88b67cc1f0a5de1c54a06b855d9979bfbe",
+      "bytes": 33133,
+      "version": "v6"
+    }
+  ],
+  "generated": [
+    {
+      "path": "index.html",
+      "generated_from": "index.json",
+      "source_sha256": "8f0671068cbdf45d35415c89cf3734ae8ed7d8f33692e14258127a74e0a81d48",
+      "sha256": "5fd92a2452e97e5555a8cb8dfd7f01a11979821e3f1f64a1a7be62fa04fed095",
+      "relation": "rendered by builder"
+    }
+  ],
+  "not_bit_reproducible": {
+    "paths": [
+      "manifest.json",
+      "manifest.json.sha256"
+    ],
+    "reason": "the manifest carries built_at and the platform; its sidecar digests the manifest"
+  },
+  "objects": [
+    {
+      "path": "conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v3/conflicted-decisions-v3.md",
+      "mime_type": "text/markdown",
+      "bytes": 28593,
+      "sha256": "10400912d65cf1bfd584322874d7f178949d209f0157072908be872076926c64",
+      "version": "v3",
+      "status": "superseded"
+    },
+    {
+      "path": "conflicted-decisions/v4/conflicted-decisions-v4.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v4/conflicted-decisions-v4.md",
+      "mime_type": "text/markdown",
+      "bytes": 23173,
+      "sha256": "27e0f46a33025cd16e4375d965d79f1ddd5e12c63d9b0ffe3d4e321f875c39ec",
+      "version": "v4",
+      "status": "superseded"
+    },
+    {
+      "path": "conflicted-decisions/v5/conflicted-decisions-v5.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v5/conflicted-decisions-v5.md",
+      "mime_type": "text/markdown",
+      "bytes": 16336,
+      "sha256": "a4362e1e9fa0ea481f3340d54a9f840dbdf7b4efcab6fef79b5413f0e5a0d1fa",
+      "version": "v5",
+      "status": "superseded"
+    },
+    {
+      "path": "conflicted-decisions/v6/conflicted-decisions-v6.md",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/conflicted-decisions/v6/conflicted-decisions-v6.md",
+      "mime_type": "text/markdown",
+      "bytes": 33133,
+      "sha256": "746e4952301b7c56a1b52572a4913c88b67cc1f0a5de1c54a06b855d9979bfbe",
+      "version": "v6",
+      "status": "current"
+    },
+    {
+      "path": "index.json",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/index.json",
+      "mime_type": "application/json",
+      "bytes": 5021,
+      "sha256": "8f0671068cbdf45d35415c89cf3734ae8ed7d8f33692e14258127a74e0a81d48"
+    },
+    {
+      "path": "index.html",
+      "canonical_uri": "https://record.arkayarisk.com/disclosures/index.html",
+      "mime_type": "text/html",
+      "bytes": 6345,
+      "sha256": "5fd92a2452e97e5555a8cb8dfd7f01a11979821e3f1f64a1a7be62fa04fed095"
+    }
+  ]
+}
