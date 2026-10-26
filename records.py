@@ -184,6 +184,10 @@ DISCLOSURE_REGISTRATION = {
          "sha256": "a4362e1e9fa0ea481f3340d54a9f840dbdf7b4efcab6fef79b5413f0e5a0d1fa",
          "bytes": 16336, "document_date": "2026-10-19",
          "reason": "Successor issue: discloses decisions taken since v4, two corrections to v4 and one disclosure-queue lapse. v3's and v4's entries are not repeated and are not superseded; v3 and v4 remain published and unchanged."},
+        {"version": "v6", "src": "conflicted-decisions-v6.md",
+         "sha256": "746e4952301b7c56a1b52572a4913c88b67cc1f0a5de1c54a06b855d9979bfbe",
+         "bytes": 33133, "document_date": "2026-10-22",
+         "reason": "Successor issue: discloses decisions taken since v5, including the publication of GET v6 for comment, and nine control failures. v3's, v4's and v5's entries are not repeated and are not superseded; v3, v4 and v5 remain published and unchanged."},
     ],
 }
 # END DISCLOSURE REGISTRATION
@@ -225,8 +229,8 @@ NAMESPACES = tuple(ns for ns in ALL_NAMESPACES
 #   {"carried_from_release": <published release>, "published_sequence": <int>,
 #    "published_manifest_sha256": <that release's published manifest digest>}
 CARRY_REGISTRATION = {
-    "disclosures": {"carried_from_release": "publish-005", "published_sequence": 3,
-                    "published_manifest_sha256": "9c0c1777479f867a5562532d508874e656acfb56e6d8a341ce5c546c6c07e2b9"},
+    "get": {"carried_from_release": "publish-006", "published_sequence": 1,
+            "published_manifest_sha256": "071791cc7c4a9ce27308dac097899b703d33fe9e396ea0ae3f6495d0fae5b2f1"},
 }
 # END CARRY REGISTRATION
 
