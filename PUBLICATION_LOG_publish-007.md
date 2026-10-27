@@ -84,7 +84,7 @@ This release publishes disclosure record v6 as disclosures sequence 4, and carri
 | Software Heritage | `https://github.com/djm-jpg/arkaya-charter-record`, origin type git, submitted by DM at about 09:44 GMT: "The 'save code now' request has been accepted and will be processed as soon as possible." A request, not preservation: no SWHID yet. Read at F4 | E3 |
 | Charter comparison | Section 6 command of the runbook in WORKING at PUBLICATION_COMMIT, 09:36 GMT: 12 of 12 PASS, CREDITED 12/12, "baseline advanced"; output `verification/live/charter_comparison_publish-007_E4.txt`; `verification/live/pvr_snapshot_live.json` updated; tracked `vendor/` files restored | E4 |
 | Evidence commit | `Baseline and publication log, publish-007`: this log, the Charter comparison output and snapshot, and the D7 ledger change. This log is inside the commit it describes, so BASELINE_TREE and the patch hash are reported to DM at E5 and entered here at Part F | E5 |
-| BASELINE_COMMIT, `evidence-013` | Entered at Part F, from Block G, P and T | E6 |
+| BASELINE_COMMIT, `evidence-013` | BASELINE_COMMIT `a4c7169035f8e6a09d59fbcbbe6ea9a5d85eff8d`; BASELINE_TREE `9f64a4dbb8e4d5a050f5467b0a3e22a8bb8b1193`; BASELINE_PATCH_SHA `dcf4fddf5be73d7d35cd83e08c285d2606cbd0c908abe22c4331c8201abf9c94` (`0001-Baseline-and-publication-log-publish-007.patch`, 24,885 bytes, DROP). `evidence-013`: annotated, unsigned, tag object `238e21aa860d6c420b422a2de1daca5e06b481c9` on BASELINE_COMMIT; tagger David McKibbin, 2026-10-26T09:53:02Z. Entered at Part F, 27 October | E6 |
 | Next-day checks | Scheduled for Tuesday 27 October 2026 | E7 |
 
 ## 6. What is public
@@ -101,5 +101,21 @@ This release publishes disclosure record v6 as disclosures sequence 4, and carri
 6. **Internet Archive outage during E2.** The first save attempt (09:38 GMT) returned "Temporarily Offline"; the captures were resubmitted from 09:39 and all seven completed by 09:46. No capture skipped.
 
 No act preceded its authority in this run. Every push and tag followed the typed line it depended on.
+
+## 8. Next-day checks (Part F)
+
+Written by Claude on 27 October 2026. Times are GMT. The same morning `publish-005` was closed late under `APPROVE PF5-1 (b)` (commit `b0754cd8e1e33f026a5bdb1f63381821d78b09b3`, tag `evidence-012`). Its live verification and Charter comparison read the state this release serves, and are this release's F1 and F3; they are not rerun.
+
+| Field | Value | Step |
+|---|---|---|
+| Authoritative live verification | VERIFY `~/arkaya-verify-publish-007` (at `release-008`) on the operator's machine against `https://record.arkayarisk.com/`, `--release=publish-007`. First run 2026-10-27T09:25:51Z: 156/157, approval withheld; the fetch of `/disclosures/index.json` was closed by the server without a response (`RemoteDisconnected`), so no bytes were compared and two dependent checks did not run. Repeated under S4 at 09:30:10Z: **159/159 checks passed, PRODUCTION APPROVAL: GRANTED**, exit 0 | F1 |
+| Evidence | `verification/live/live_verification_20261027T093010.json`, 33,694 bytes, SHA-256 `1d29b5c93560ac14888fb53f22efe2c87d115bbef3baeaa69cb7e2067568951d`; the failed run `live_verification_20261027T092551.json`, 33,354 bytes, SHA-256 `9c3aaffbe7d623ce8c399afac59ffba85d0839d80aae80d641b84cc70814fae4`. Both copied to DROP by the operator, hashed on the device and in the session, equal; both committed at `evidence-012` | F1-F2 |
+| Evidence fields | canonical base; release `publish-007`, frozen; `rehearsal: false`; `test_input: false`; `passed: true`; `production_approval: true`; no blockers, no findings; root pointer local and served `eaa510f9…73fb`; manifests local and served equal: charter `b926170e…2ac6` (carried), disclosures `ff0c3dab…b6aa` (built, sequence 4), GET `071791cc…b2f1` (carried). Against `live_verification_20261026T091735.json` (SHA-256 `775195530fe187cc6461af89ff69f5b7e33babcd496224e90e7241952b91800d`): the same 159 checks, the three served manifests and the served root pointer equal, and all 17 per-object digest checks reporting the same served digests | F2 |
+| Charter comparison | Section 6 command of the runbook, unchanged, in WORKING, 2026-10-27T09:31Z, after F1: exit 0, live **12/12 PASS**, current `v3`, 4 versions, "baseline advanced". Output `verification/live/charter_comparison_publish-005_PF5-1.txt` (5,371 bytes, SHA-256 `6248a81aacf1dc90bac01a66d9fa254a5046a5f15baaac7a3488a33c7248d8fb`), committed at `evidence-012`; the snapshot it advanced is committed there too | F3 |
+| SWHID | Snapshot `swh:1:snp:2a2e97ccc8898413cd2ff98ac8900109ab49da91`, visit 2026-10-26T12:11:47Z, read on 27 October: the visit requested at E3. It holds `main` at `a4c7169` (BASELINE_COMMIT) and `release-008`, `publication-007` and `evidence-013`, so it preserves this release's publication and baseline. It predates `evidence-012` and `evidence-014` | F4 |
+
+**Notes on the checks.** (1) F1 was repeated after a dropped connection; both evidence files are kept. (2) F1 and F3 were run once for two closes on the same morning, because both read the same served state; the files carry the `publish-005` name under which they were first committed. Neither changes what the checks establish.
+
+**Result.** The published state held unchanged from 26 to 27 October: all three namespaces served their frozen bytes, the Charter passed its acceptance suite, and no finding arose. This commit carries the next-day entries and is tagged `evidence-014`.
 
 *AKR AIPS · PUBLICATION_LOG_publish-007 · session k4r9te · 26 October 2026*
