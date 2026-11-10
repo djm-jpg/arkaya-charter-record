@@ -188,6 +188,10 @@ DISCLOSURE_REGISTRATION = {
          "sha256": "746e4952301b7c56a1b52572a4913c88b67cc1f0a5de1c54a06b855d9979bfbe",
          "bytes": 33133, "document_date": "2026-10-22",
          "reason": "Successor issue: discloses decisions taken since v5, including the publication of GET v6 for comment, and nine control failures. v3's, v4's and v5's entries are not repeated and are not superseded; v3, v4 and v5 remain published and unchanged."},
+        {"version": "v7", "src": "conflicted-decisions-v7.md",
+         "sha256": "2a02e74518b45714a09f7d96a7bafaea23829735f8e7c8e2e6a53a45126b747f",
+         "bytes": 31334, "document_date": "2026-11-09",
+         "reason": "Successor issue: discloses decisions taken since v6, including the dispositions of the GET v6 comments, formal entries for decisions v6 disclosed in substance, and four control failures, one of them a missed interval. v3's to v6's entries are not repeated and are not superseded; v3 to v6 remain published and unchanged."},
     ],
 }
 # END DISCLOSURE REGISTRATION
