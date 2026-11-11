@@ -81,7 +81,7 @@ This release publishes disclosure record v7 as disclosures sequence 5. It carrie
 | Software Heritage | `https://github.com/djm-jpg/arkaya-charter-record`, origin type git, submitted by DM: "accepted and will be processed as soon as possible". Read through the Software Heritage API at 15:10 GMT: request 2636786, 2026-11-10T15:09:28Z, `succeeded`, snapshot `swh:1:snp:dbad6762574dcfadd984d4be559dae81c7885a47`, holding `main` at `d827f7c9…` and `release-009` and `publication-008` (the latter targeting PUBLICATION_COMMIT). It predates `evidence-015` | E3 |
 | Charter comparison | Section 6 command of the runbook in WORKING at PUBLICATION_COMMIT, 15:10 GMT: 12 of 12 PASS, CREDITED 12/12, "baseline advanced"; output `verification/live/charter_comparison_publish-008_E4.txt`; `verification/live/pvr_snapshot_live.json` updated; tracked `vendor/` files restored | E4 |
 | Evidence commit | `Baseline and publication log, publish-008`: this log, the Charter comparison output and snapshot, and the D7 ledger change. This log is inside the commit it describes, so BASELINE_TREE and the patch hash are reported to DM at E5 and entered here at Part F | E5 |
-| BASELINE_COMMIT, `evidence-015` | Outstanding: entered at Part F | E6 |
+| BASELINE_COMMIT, `evidence-015` | BASELINE_COMMIT `87e791513b280c910d5eb607c7b90aa89fa21178`; BASELINE_TREE `3023b106629a581495ca2efc0f591b6b4075c5fd`; BASELINE_PATCH_SHA `31167b811ab250a53c962ed95948c1462e8575710247c57afe2861bed3ddd2ae` (`OPS_Patch_publish-008_Baseline_2026-11-10_v1.patch`, 25,362 bytes, DROP). `evidence-015`: annotated, unsigned, tag object `d09171c6123f3681e8d14717de865a51c07edef4` on BASELINE_COMMIT; tagger David McKibbin, 2026-11-10T15:14:30Z. Read on a fresh public clone and entered at Part F, 11 November | E6 |
 | Next-day checks | Scheduled for Wednesday 11 November 2026 | E7 |
 
 ## 6. What is public
@@ -99,7 +99,27 @@ This release publishes disclosure record v7 as disclosures sequence 5. It carrie
 7. **E2 and E3 submitted before the typed E1.** The session put E1 to DM with the URLs at about 15:02 GMT; DM made the captures from 15:03 and typed E1 at 15:10. The acts were the ones E1 authorises and nothing else ran ahead of it.
 8. **Terminal screenshots as evidence** for Blocks G, P and T and the VERIFY and VERIFY2 checks, as at publish-007. Every value was re-read by the session on a fresh public clone.
 9. **Part A items A4 to A6** are not separately evidenced in this log (section 1).
+10. **E5 gate not run.** E5 requires `package.py` before the evidence commit; the session committed `Baseline and publication log, publish-008` without running it. Entered at Part F. Closed on 11 November: `PVR_RELEASE=publish-008 python3 package.py --check` on a fresh public clone at `evidence-015`, before any Part F change, exited 0 with every suite ok (section 8).
+11. **Block F apply-tests without `package.py --check`.** Block F step 2 requires the apply-test of a patch to end with `package.py --check` exiting 0. For the publication and baseline patches the session tested that each applied and gave its target tree, but did not run `--check`. Entered at Part F. The publication commit was checked at D8 and D9 (VERIFY2 and the session's clone at `publication-008`, exit 0); the baseline commit by item 10's next-day check. For runbook v5: state the apply-test as one command that ends with `--check`.
 
-Two acts preceded their typed authority in this run (items 5 and 7). Every push and tag followed the line it depended on.
+Two acts preceded their typed authority in this run (items 5 and 7). Every push and tag followed the line it depended on. Items 10 and 11 are omitted checks, found after the run and closed by later checks; neither let a push or tag run ahead of its line.
+
+## 8. Next-day checks (Part F)
+
+Written by Claude on 11 November 2026. Times are GMT (equal to UTC on this date).
+
+| Field | Value | Step |
+|---|---|---|
+| Pre-check | Before F1 the session fetched the seven E2 URLs: each returned 200, and the served carrier's SHA-256 equalled CARRIER_SHA (`2a02e745…747f`) | F1 |
+| Authoritative live verification | VERIFY `~/arkaya-verify-publish-008` (at `release-009`) on the operator's machine against `https://record.arkayarisk.com/`, `--release=publish-008`, 2026-11-11T08:42:21Z: **162/162 checks passed, PRODUCTION APPROVAL: GRANTED**, exit 0 (operator's screenshot, read by the session) | F1 |
+| Evidence | `verification/live/live_verification_20261111T084221.json`, 34,659 bytes, SHA-256 `df16da52edf541a1e21e0e19c1b649fe2f2f45b7d899752fc30f2c9a1df42f89`. Copied to DROP by the operator and hashed there in VERIFY and in DROP (equal); read again on the device and in the session (equal); committed here | F1-F2 |
+| Evidence fields | canonical base; release `publish-008`, frozen, release date 2026-11-10; `rehearsal: false`; `test_input: false`; `passed: true`; `production_approval: true`; no blockers, no findings, no checks unexercised; root pointer local and served `eaa510f9…73fb`; manifests local and served equal: charter `b926170e…2ac6` (carried), disclosures `e6dcf5b2…7a6e` (built, sequence 5), GET `071791cc…b2f1` (carried from publish-006). Against `live_verification_20261110T144312.json` (SHA-256 `dbadea3e604f1c8da50641b6b812b28aedbbfa72770141277ab7b6e24de05527`): every field except `verified_at` equal, including the same 162 checks with identical results and every served object's digest, size and status | F2 |
+| Charter comparison | Section 6 command of the runbook, unchanged, in WORKING (a fresh public clone at `evidence-015`), 2026-11-11T08:47:44Z, after F1: exit 0, live **12/12 PASS**, CREDITED 12/12, current `v3`, 4 versions, "baseline advanced". Output `verification/live/charter_comparison_publish-008_F3.txt` (5,371 bytes, SHA-256 `6248a81aacf1dc90bac01a66d9fa254a5046a5f15baaac7a3488a33c7248d8fb`, byte-identical to the E4 output); `verification/live/pvr_snapshot_live.json` advanced; tracked `vendor/` files restored | F3 |
+| SWHID | Snapshot `swh:1:snp:dbad6762574dcfadd984d4be559dae81c7885a47`, visit 13, 2026-11-10T15:09:32Z, read through the Software Heritage API on 11 November: the latest visit, the one requested at E3. It holds `main` at `d827f7c9d392bf4be5848d4937edef44d7de2a2c` (PUBLICATION_COMMIT), `release-009` (tag object `4dbba94e…`) and `publication-008` (tag object `8fa33b35…`), each equal to the repository's. It predates `evidence-015` and BASELINE_COMMIT, so it preserves this release's freeze and publication but not its baseline | F4 |
+| Gate at `evidence-015` | `PVR_RELEASE=publish-008 python3 package.py --check` in WORKING before any Part F change: exit 0; Charter carried, disclosures built sequence 5 manifest `e6dcf5b2…`, GET carried byte-identical; build, verifier, gate and namespace tests ok. Closes section 7 items 10 and 11 | F5 |
+
+**Notes on the checks.** (1) The Charter comparison output carries no timestamp, so its bytes repeat from run to run. (2) Software Heritage holds no visit after E3; a fresh save after `evidence-016` would preserve the baseline and this commit together.
+
+**Result.** The published state held unchanged from 10 to 11 November: all three namespaces served their frozen bytes, the Charter passed its acceptance suite, and no new finding arose from the checks. Section 7 items 10 and 11 were found when Part F was prepared and are closed above. This commit carries the next-day entries and is tagged `evidence-016`.
 
 *AKR AIPS · PUBLICATION_LOG_publish-008 · session g6nov9 · 10 November 2026*
