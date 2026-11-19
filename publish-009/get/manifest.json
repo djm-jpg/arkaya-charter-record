@@ -1,0 +1,77 @@
+{
+  "schema": "arkaya-get-manifest/1",
+  "record": "Arkaya Governance Evidence Taxonomy (GET) schema",
+  "namespace": "get",
+  "as_of": "2026-10-20",
+  "sequence": 1,
+  "canonical_uri": "https://record.arkayarisk.com/get/",
+  "provenance_claim": "The manifest records the release builder and its digest, the namespace registry and its digest, the registered inputs with their digests, and the build parameters. Matching digests identify the supplied builder and registry and show that the shipped objects stand in the expected relationship to the registered inputs. They do not independently prove that this builder historically executed.",
+  "builder": {
+    "script": "build_release.py",
+    "source_path": "build_release.py",
+    "version": "2026-09-28.1",
+    "sha256": "e7d57fbc274eaeea0e02d7741a7607e00ed92607fcf4fe7f66a34c517e6a669e"
+  },
+  "registry": {
+    "path": "records.py",
+    "sha256": "b70ab2fbcdbaa9ee2ebc5d3e7f48fc6707fd7a69d6e25b2160e7d9ef99d3c5cd"
+  },
+  "build_parameters": {
+    "built_at": "2026-10-20T21:08:48.077283+00:00",
+    "python": "3.13.16",
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "PVR_RELEASE_DATE": "2026-10-20",
+    "sequence": 1,
+    "date_mismatch_reason": null,
+    "test_input": false
+  },
+  "inputs": [
+    {
+      "path": "inputs/get/Arkaya_GET_Schema_v6.json",
+      "sha256": "c1e1d4f74a5f892d09766235a474046f95f06c5f39f308b81336259ce79c8ae5",
+      "bytes": 28325,
+      "version": "1.0.1-public-draft-v6"
+    }
+  ],
+  "generated": [
+    {
+      "path": "index.html",
+      "generated_from": "index.json",
+      "source_sha256": "ab0edb8123c816eb6b0ef055aed5ded10db5fb221584ef2ec5e7a1ae7e77db37",
+      "sha256": "d3f53c20d55a0c0cf6890e737771fe54aaa7b7fa7724fd3fdc0f9c35ceddc890",
+      "relation": "rendered by builder"
+    }
+  ],
+  "not_bit_reproducible": {
+    "paths": [
+      "manifest.json",
+      "manifest.json.sha256"
+    ],
+    "reason": "the manifest carries built_at and the platform; its sidecar digests the manifest"
+  },
+  "objects": [
+    {
+      "path": "1.0.1-public-draft-v6/Arkaya_GET_Schema_v6.json",
+      "canonical_uri": "https://record.arkayarisk.com/get/1.0.1-public-draft-v6/Arkaya_GET_Schema_v6.json",
+      "mime_type": "application/schema+json",
+      "bytes": 28325,
+      "sha256": "c1e1d4f74a5f892d09766235a474046f95f06c5f39f308b81336259ce79c8ae5",
+      "version": "1.0.1-public-draft-v6",
+      "status": "Public draft for comment, 21 days from publication; not approved; not a candidate. The current candidate is editorial revision v5 (normative version 1.0). Published by Arkaya Risk Limited for Arkaya Risk (Holdings) Limited as Temporary Custodian of the Governance Evidence Taxonomy and Founding Assessor, with the author's written permission."
+    },
+    {
+      "path": "index.json",
+      "canonical_uri": "https://record.arkayarisk.com/get/index.json",
+      "mime_type": "application/json",
+      "bytes": 3589,
+      "sha256": "ab0edb8123c816eb6b0ef055aed5ded10db5fb221584ef2ec5e7a1ae7e77db37"
+    },
+    {
+      "path": "index.html",
+      "canonical_uri": "https://record.arkayarisk.com/get/index.html",
+      "mime_type": "text/html",
+      "bytes": 5831,
+      "sha256": "d3f53c20d55a0c0cf6890e737771fe54aaa7b7fa7724fd3fdc0f9c35ceddc890"
+    }
+  ]
+}
