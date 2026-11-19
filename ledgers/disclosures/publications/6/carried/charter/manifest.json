@@ -1,0 +1,131 @@
+{
+  "schema": "arkaya-integrity-manifest/3",
+  "instrument": "Arkaya Schema Independence Charter",
+  "as_of": "2026-09-16",
+  "sequence": 1,
+  "canonical_uri": "https://record.arkayarisk.com/charter/",
+  "provenance_claim": "The manifest records the builder, its digest, the inputs with their source digests, and the build parameters. Matching digests identify the supplied builder and demonstrate that the shipped objects stand in the expected relationship to the recorded inputs. They do not independently prove that this builder historically executed, and they are not a substitute for the retained build evidence.",
+  "builder": {
+    "script": "build_publication_set.py",
+    "source_path": "build_publication_set.py",
+    "version": "2026-09-16.4",
+    "sha256": "311f9f110cd376d37f2d56ddde03930d7d339ae7ab7439a506f947dbeca72346"
+  },
+  "build_parameters": {
+    "built_at": "2026-09-16T13:47:23.974303+00:00",
+    "python": "3.11.15",
+    "platform": "Linux-6.18.44-fc-v33-x86_64-with-glibc2.39",
+    "PVR_CANONICAL_BASE": "https://record.arkayarisk.com/charter",
+    "PVR_RELEASE_DATE": "2026-09-16",
+    "PVR_SEQUENCE": 1,
+    "date_mismatch_reason": null
+  },
+  "inputs": [
+    {
+      "path": "inputs/charter-v1.pdf",
+      "sha256": "03794ff916330d36e551ccb0d98a173c5205e98c27eb35124a7466eedc776e6e",
+      "bytes": 137752,
+      "version": "v1"
+    },
+    {
+      "path": "inputs/charter-v1.1.pdf",
+      "sha256": "2d55ac0b81e07fee580e4784126c2d581b7acaec70ee55f84f5f0bec1bac0897",
+      "bytes": 145462,
+      "version": "v1.1"
+    },
+    {
+      "path": "inputs/charter-v2.pdf",
+      "sha256": "1df3e103e94515c5fbaf8792c5f09f4b539cd919ed65d7d3892d3001fc1ca12b",
+      "bytes": 151068,
+      "version": "v2"
+    },
+    {
+      "path": "inputs/charter-v3.pdf",
+      "sha256": "751972efbfa4fb6070b6c9b36f289211937cfcf97724511743a1e1251d752ba5",
+      "bytes": 154947,
+      "version": "v3"
+    }
+  ],
+  "generated": [
+    {
+      "path": "README.md",
+      "generated_from": "README_source.md",
+      "source_sha256": "b666a29e9c69ff87871dd63c17946cf98cec9f3d5d3aa13b0780501c7ff23cbf",
+      "sha256": "b666a29e9c69ff87871dd63c17946cf98cec9f3d5d3aa13b0780501c7ff23cbf",
+      "relation": "verbatim copy"
+    },
+    {
+      "path": "index.html",
+      "generated_from": "index.json",
+      "source_sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a",
+      "sha256": "84770dcb5e0d45bca3bc5874129745378f17751925a33d5ec9befea3249127c0",
+      "relation": "rendered by builder"
+    }
+  ],
+  "not_bit_reproducible": {
+    "paths": [
+      "manifest.json",
+      "manifest.json.sha256"
+    ],
+    "reason": "the manifest carries built_at and the platform; its sidecar digests the manifest"
+  },
+  "objects": [
+    {
+      "path": "v1/charter-v1.pdf",
+      "canonical_uri": "https://record.arkayarisk.com/charter/v1/charter-v1.pdf",
+      "mime_type": "application/pdf",
+      "bytes": 137752,
+      "sha256": "03794ff916330d36e551ccb0d98a173c5205e98c27eb35124a7466eedc776e6e",
+      "version": "v1",
+      "status": "superseded"
+    },
+    {
+      "path": "v1.1/charter-v1.1.pdf",
+      "canonical_uri": "https://record.arkayarisk.com/charter/v1.1/charter-v1.1.pdf",
+      "mime_type": "application/pdf",
+      "bytes": 145462,
+      "sha256": "2d55ac0b81e07fee580e4784126c2d581b7acaec70ee55f84f5f0bec1bac0897",
+      "version": "v1.1",
+      "status": "superseded"
+    },
+    {
+      "path": "v2/charter-v2.pdf",
+      "canonical_uri": "https://record.arkayarisk.com/charter/v2/charter-v2.pdf",
+      "mime_type": "application/pdf",
+      "bytes": 151068,
+      "sha256": "1df3e103e94515c5fbaf8792c5f09f4b539cd919ed65d7d3892d3001fc1ca12b",
+      "version": "v2",
+      "status": "superseded"
+    },
+    {
+      "path": "v3/charter-v3.pdf",
+      "canonical_uri": "https://record.arkayarisk.com/charter/v3/charter-v3.pdf",
+      "mime_type": "application/pdf",
+      "bytes": 154947,
+      "sha256": "751972efbfa4fb6070b6c9b36f289211937cfcf97724511743a1e1251d752ba5",
+      "version": "v3",
+      "status": "current"
+    },
+    {
+      "path": "index.json",
+      "canonical_uri": "https://record.arkayarisk.com/charter/index.json",
+      "mime_type": "application/json",
+      "bytes": 5525,
+      "sha256": "8f5fc27deb886815f2394d83d7b676616a473549b79651c1b70fc79d061c848a"
+    },
+    {
+      "path": "index.html",
+      "canonical_uri": "https://record.arkayarisk.com/charter/index.html",
+      "mime_type": "text/html",
+      "bytes": 6678,
+      "sha256": "84770dcb5e0d45bca3bc5874129745378f17751925a33d5ec9befea3249127c0"
+    },
+    {
+      "path": "README.md",
+      "canonical_uri": "https://record.arkayarisk.com/charter/README.md",
+      "mime_type": "text/markdown",
+      "bytes": 5711,
+      "sha256": "b666a29e9c69ff87871dd63c17946cf98cec9f3d5d3aa13b0780501c7ff23cbf"
+    }
+  ]
+}

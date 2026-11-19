@@ -65,6 +65,16 @@
       "publication_evidence_tag": "publication-008",
       "publication_evidence_commit": "d827f7c9d392bf4be5848d4937edef44d7de2a2c",
       "evidence_tag_recorded_at": "2026-11-10T14:57:34.535198+00:00"
+    },
+    "6": {
+      "index_sha256": "71b920ff4263fdb21e32ee5d44291a962d8a5e35a582319b4353fa0797bed530",
+      "manifest_sha256": "da5eee5cd116fae481c4ac40932801f394ccfa9cace38db2184cc416bcc96b6c",
+      "made_current_on": "2026-11-19",
+      "recorded_at": "2026-11-19T12:23:40.332398+00:00",
+      "snapshot": "ledgers/disclosures/publications/6/",
+      "release": "publish-009",
+      "deploy_id": "6afee58e8febbeb71bf1a52e",
+      "release_commit": "cac39becd1e55b4c9f0331022affb7867f367622"
     }
   }
 }
