@@ -78,6 +78,16 @@
       "publication_evidence_tag": "publication-009",
       "publication_evidence_commit": "0f6ac428c265b090a318a46fae1805bf645306a3",
       "evidence_tag_recorded_at": "2026-11-19T12:38:18.282321+00:00"
+    },
+    "7": {
+      "index_sha256": "bc01da1a1dde21bce43c92f6a9f2e5c0ec128e740aa926f5542fb77854f3b5df",
+      "manifest_sha256": "47c621295d14fb08de5e39390f57230ae6ad89f189b291557f43efea42bb1fde",
+      "made_current_on": "2026-11-27",
+      "recorded_at": "2026-11-27T10:47:27.584010+00:00",
+      "snapshot": "ledgers/disclosures/publications/7/",
+      "release": "publish-010",
+      "deploy_id": "6b095d46c3a224258abe91b6",
+      "release_commit": "bb294136b9341a3c56087cc6773e7680b895dd13"
     }
   }
 }
