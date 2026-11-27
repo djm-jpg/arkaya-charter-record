@@ -1,0 +1,967 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://schema.arkayarisk.com/get/1.0",
+ "title": "Governance Evidence Taxonomy (GET) v1.0: machine-readable schema, normative version 1.0.1, editorial revision v6. PUBLIC DRAFT FOR COMMENT (correction over v5 in descriptions only; nothing that validates changes)",
+ "description": "Editorial revision v6 of GET v1.0, normative version 1.0.1. Status: public draft for comment under the Layer 1 Versioning, Compatibility and Change-Control Policy v4 section 7, open for comment for 21 days from publication. It is not a candidate and it is not approved. Until it leaves the public-draft stage, editorial revision v5 (SHA-256 fc1e6a1d22af06c448f7b5b1d889fbec16d83953e783df7affb74a94c4f495bc) remains the current candidate. v6 is a PATCH under that policy's section 3: only descriptions and the title change. No keyword, type, pattern, enumeration, required list or reference changes, so every instance valid against v5 is valid against v6 and the reverse. The schema_version field still accepts 1.0 only: under section 3 of that policy as corrected at v4, the field carries MAJOR.MINOR, and the PATCH is stated on this cover and in the release record. Changes from v5: (1) the atomicPrimitive description no longer names a Layer 2 product; (2) carTier, maturityLevel and loopStage are marked reserved, since no field in normative version 1.0 references them; (3) the informative note below states what an empty array does and does not establish; (4) the auditEvent.tenant_id description no longer states that the Cryptographic Profile section 3.2 null prohibition does not apply to audit events; it does apply. Deferred to normative version 1.1, with the structural corrections already listed for it: referencing the Cryptographic Profile by digest rather than by label, any normative rule on how a reader treats an empty array, removal of the null branch on auditEvent.tenant_id, and a statement of how this schema's arrays relate to the record body under the Evidence Record Specification v2, withdrawn from this revision after independent check because interpretation records such as maturity_interpretations carry a tier reading and a record body under that specification carries no grade or rating (its section 8).\n\nInformative note on empty arrays. Each top-level array may be empty; an empty array means the document carries no records of that type. Under the Evidence Record Specification v2 section 12, records carry integrity, not veracity, and nothing in this schema establishes that a document is complete. Whether an empty array shows that no such event occurred is not determined by this schema.\n\nEditorial revision v5, as issued 4 September 2026 (retained verbatim): Fifth emission; first normative release. Normative version 1.0, carried in schema_version and on the cover per the Layer 1 Versioning Compatibility and Change-Control Policy section 3; editorial revision v5, carried in the filename. Emissions v1 to v4 preceded the first normative release and carry no normative version. v5 is a structural, breaking revision over v4 closing the four conflict classes against the Layer 1 Cryptographic Profile sections 3.1 to 3.3 identified in external build verification, 2 September 2026: (1) the algorithm-prefixed hexadecimal hash anchor of v1 to v4 is replaced by the section 3.3 digest reference (base58-btc multibase over the SHA-256 multihash) across chain_hash, previous_chain_hash, payload_content_hash and public_key_fingerprint; (2) isoDateTime enforces the section 3.1 lexical form by pattern (exactly three fractional digits, Z designator only), format retained as annotation; (3) the seven fractional-number fields carry decimals as strings per section 3 (checklist_completion_percent and the six velocityComponents members; integers stay JSON integers); (4) the null branch on conformanceResult.tenant_id is removed per section 3.2, absence already expressing absence since the field is not required. The changes are breaking, so schema_version accepts 1.0 only; v2 to v4 instances validate against their own emissions. Status: candidate under Layer 1 Custodian Charter v3 section 9; approval of a major schema version is a Custodian Charter section 5.1 reserved matter for the Custodian board, not yet constituted, mirroring the Cryptographic Profile v6 handling. The document is designated GET v1.0, carries normative version 1.0, and publishes under a content hash and an independent time anchor; under Custodian Charter v3 section 9 it is a candidate, pending approval by the board the Charter constitutes at section 5.1. Designation and normative version are facts about the artefact; approval is a governance act by a body. Class B working draft, 4 September 2026.",
+ "type": "object",
+ "$defs": {
+  "uuid": {
+   "type": "string",
+   "format": "uuid",
+   "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+  },
+  "isoDateTime": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\\.[0-9]{3}Z$",
+   "description": "RFC 3339 UTC timestamp in the single lexical form of Profile section 3.1: exactly three fractional digits, 'Z' designator only, calendar field ranges enforced (decision D-9, closed at Profile v5). format is retained as an annotation only; the pattern is the normative constraint. The pattern enforces lexical field ranges only; calendar validity, for example rejecting 2026-02-31, remains the consuming application's responsibility."
+  },
+  "didWeb": {
+   "type": "string",
+   "pattern": "^did:web:[a-zA-Z0-9.\\-_]+(/.+)*$",
+   "description": "did:web identifier for institutional identity per the Layer 1 Cryptographic Profile v6."
+  },
+  "didKey": {
+   "type": "string",
+   "pattern": "^did:key:z[1-9A-HJ-NP-Za-km-z]+$",
+   "description": "did:key identifier for actor signing. Multicodec ed25519-pub (0xed01) over the raw 32-byte Ed25519 public key, base58-btc multibase ('z')."
+  },
+  "didKeyVerificationMethod": {
+   "type": "string",
+   "pattern": "^did:key:z[1-9A-HJ-NP-Za-km-z]+#z[1-9A-HJ-NP-Za-km-z]+$",
+   "description": "verificationMethod for a did:key proof: the did:key with the key id as fragment."
+  },
+  "digestRef": {
+   "type": "string",
+   "pattern": "^zQm[1-9A-HJ-NP-Za-km-z]{44}$",
+   "description": "Digest reference per the Layer 1 Cryptographic Profile section 3.3: base58-btc multibase ('z') over the SHA-256 multihash (0x12 0x20 followed by the 32-byte digest); 47 characters, always beginning zQm, a form that follows from the fixed multihash header rather than from observation, and verified empirically against the frozen vector-set digests. Replaces the v1 to v4 hexadecimal hash anchor for chain integrity and content commitment; breaking. Algorithm-prefixed hexadecimal is barred (Profile decision D-10, closed at v5)."
+  },
+  "multibaseBase58btc": {
+   "type": "string",
+   "pattern": "^z[1-9A-HJ-NP-Za-km-z]+$",
+   "description": "base58-btc multibase value ('z' prefix) per W3C Controlled Identifiers 1.0."
+  },
+  "decimalString": {
+   "type": "string",
+   "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]+)?$",
+   "description": "Non-negative numeric value represented as a decimal string, per Profile section 3: fractional numbers travel as strings so canonical form never depends on number serialisation (decision D-12); integers stay JSON integers."
+  },
+  "percentString": {
+   "type": "string",
+   "pattern": "^(100(\\.0+)?|(0|[1-9]?[0-9])(\\.[0-9]+)?)$",
+   "description": "Decimal string bounded 0 to 100 inclusive, same carriage rule as decimalString."
+  },
+  "dataIntegrityProof": {
+   "type": "object",
+   "description": "W3C Data Integrity proof. type DataIntegrityProof, cryptosuite eddsa-jcs-2022. proofValue is a detached RFC 8032 Ed25519 signature over hashData = SHA-256(JCS(proofConfig)) || SHA-256(JCS(unsecuredDocument)), base58-btc multibase encoded.",
+   "required": [
+    "type",
+    "cryptosuite",
+    "created",
+    "verificationMethod",
+    "proofPurpose",
+    "proofValue"
+   ],
+   "properties": {
+    "type": {
+     "const": "DataIntegrityProof"
+    },
+    "cryptosuite": {
+     "const": "eddsa-jcs-2022"
+    },
+    "created": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "verificationMethod": {
+     "$ref": "#/$defs/didKeyVerificationMethod"
+    },
+    "proofPurpose": {
+     "const": "assertionMethod"
+    },
+    "proofValue": {
+     "$ref": "#/$defs/multibaseBase58btc"
+    }
+   },
+   "additionalProperties": false
+  },
+  "atomicPrimitive": {
+   "type": "string",
+   "enum": [
+    "INITIATE",
+    "AUTHORISE",
+    "CLASSIFY",
+    "REVIEW",
+    "DECIDE",
+    "ESCALATE",
+    "DELEGATE",
+    "ATTEST",
+    "DISCLOSE",
+    "VERIFY",
+    "REMEDIATE"
+   ],
+   "description": "Eleven atomic GET governance primitives. Canonical source of record: the Arkaya GET Primitive Register (10-Layer1-Custodian/Specifications/, current version). Token values are normative and fixed by that register; Layer 2 methodology documents may bind them downstream and are not the authority for this enumeration."
+  },
+  "carComponent": {
+   "type": "string",
+   "enum": [
+    "VoiceOfLeadership",
+    "InsuranceProgrammeReview",
+    "DynamicBCP",
+    "KeyObligationsIngestion",
+    "HITLAccountabilityChain",
+    "VerificationLoops",
+    "RiskSimulationPlaybooks",
+    "RiskMaturityTrajectory",
+    "MonitoringLayerInteroperability",
+    "EvidenceArchitecture",
+    "CapitalMarketDeployment"
+   ],
+   "description": "Eleven CAR Components per the Architecture Reference (CAR)."
+  },
+  "carTier": {
+   "type": "string",
+   "enum": [
+    "Readiness",
+    "Maturity",
+    "AllTiers",
+    "Premium"
+   ],
+   "description": "Reserved: referenced by no field in normative version 1.0. Three-tier sequencing per the Architecture Reference (CAR)."
+  },
+  "maturityLevel": {
+   "type": "string",
+   "enum": [
+    "Foundational",
+    "Intermediate",
+    "Established",
+    "Advanced"
+   ],
+   "description": "Reserved: referenced by no field in normative version 1.0. Lloyd's four-level Maturity Matrix, November 2025 edition."
+  },
+  "fiveVariableAxis": {
+   "type": "string",
+   "enum": [
+    "V1_CrystallisationCost",
+    "V2_TransferInstrumentPerformance",
+    "V3_TriggerPrecision",
+    "V4_ControlAssurance",
+    "V5_LegalCausationClarity"
+   ],
+   "description": "Five-Variable Problem axes. The methodology addresses V3, V4 and V5 continuously."
+  },
+  "fivePricingMoment": {
+   "type": "string",
+   "enum": [
+    "M1_InsuranceRenewal",
+    "M2_Claim",
+    "M3_Refinancing",
+    "M4_Exit",
+    "M5_CovenantSurveillance"
+   ],
+   "description": "Five Moments per Multi-service Business Model v2 Section 3."
+  },
+  "actorRole": {
+   "type": "string",
+   "enum": [
+    "INSURED",
+    "INSURED_CUSTODIAN",
+    "INSURER_CLAIMS_HANDLER",
+    "REINSURER",
+    "AUDITOR",
+    "REGULATOR",
+    "BRIDGE_PARTNER"
+   ]
+  },
+  "accessTier": {
+   "type": "string",
+   "enum": [
+    "READ_OWN_TENANT",
+    "READ_GRANTED_TENANT",
+    "READ_AGGREGATED",
+    "WRITE_OWN_TENANT"
+   ]
+  },
+  "loopStage": {
+   "type": "string",
+   "enum": [
+    "Protocol",
+    "Signal",
+    "HITLDecision",
+    "Evidence",
+    "CrossStage"
+   ],
+   "description": "Reserved: referenced by no field in normative version 1.0. Governance Loop stages."
+  },
+  "tenant": {
+   "type": "object",
+   "required": [
+    "id",
+    "did_web",
+    "name",
+    "organisation_type",
+    "jurisdiction",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "did_web": {
+     "$ref": "#/$defs/didWeb"
+    },
+    "name": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 256
+    },
+    "organisation_type": {
+     "type": "string",
+     "enum": [
+      "INSURED",
+      "INSURER",
+      "REINSURER",
+      "BROKER",
+      "PE_SPONSOR",
+      "MGA",
+      "REGULATOR",
+      "AUDITOR",
+      "BRIDGE_PARTNER"
+     ]
+    },
+    "jurisdiction": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 128
+    },
+    "created_at": {
+     "$ref": "#/$defs/isoDateTime"
+    }
+   }
+  },
+  "actor": {
+   "type": "object",
+   "required": [
+    "id",
+    "tenant_id",
+    "did_key",
+    "email",
+    "display_name",
+    "role",
+    "public_key_multibase",
+    "public_key_fingerprint",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "did_key": {
+     "$ref": "#/$defs/didKey"
+    },
+    "email": {
+     "type": "string",
+     "format": "email"
+    },
+    "display_name": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 256
+    },
+    "role": {
+     "$ref": "#/$defs/actorRole"
+    },
+    "public_key_multibase": {
+     "$ref": "#/$defs/multibaseBase58btc",
+     "description": "Ed25519 public key, multicodec ed25519-pub (0xed01), base58-btc multibase. Replaces v1 public_key_pem."
+    },
+    "public_key_fingerprint": {
+     "$ref": "#/$defs/digestRef",
+     "description": "Fingerprint of the actor public key in the section 3.3 digest-reference form. Converted with the digest family at v5 under the same section 3.3 authority; one field beyond the three named in the external build verification, flagged for reversal if a consumer bound to the v4 hexadecimal form exists."
+    },
+    "created_at": {
+     "$ref": "#/$defs/isoDateTime"
+    }
+   }
+  },
+  "protocol": {
+   "type": "object",
+   "description": "Board-authored executable. Defines the obligation against which Signals are classified and Decisions are made.",
+   "required": [
+    "id",
+    "tenant_id",
+    "version",
+    "protocol_text",
+    "authorising_actor_id",
+    "primitives_instantiated",
+    "car_component",
+    "five_variable_axes",
+    "chain_hash",
+    "created_at",
+    "proof"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "version": {
+     "type": "string",
+     "pattern": "^v[0-9]+$"
+    },
+    "protocol_text": {
+     "type": "string",
+     "minLength": 1
+    },
+    "authorising_actor_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "primitives_instantiated": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/atomicPrimitive"
+     },
+     "minItems": 1
+    },
+    "car_component": {
+     "$ref": "#/$defs/carComponent"
+    },
+    "five_variable_axes": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/fiveVariableAxis"
+     },
+     "minItems": 1
+    },
+    "chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "previous_chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "created_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "proof": {
+     "$ref": "#/$defs/dataIntegrityProof"
+    }
+   }
+  },
+  "signal": {
+   "type": "object",
+   "description": "From live controls. Classified against the Protocol-defined taxonomy by the CLASSIFY primitive.",
+   "required": [
+    "id",
+    "tenant_id",
+    "protocol_id",
+    "signal_class",
+    "raw_payload",
+    "classified_at",
+    "classifying_actor_id",
+    "chain_hash",
+    "proof"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "protocol_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "signal_class": {
+     "type": "string",
+     "minLength": 1
+    },
+    "raw_payload": {
+     "type": "object"
+    },
+    "classified_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "classifying_actor_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "previous_chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "proof": {
+     "$ref": "#/$defs/dataIntegrityProof"
+    }
+   }
+  },
+  "hitlDecision": {
+   "type": "object",
+   "description": "Human judgment at Protocol-defined latency. The human-paced anchor inside an otherwise machine-paced system.",
+   "required": [
+    "id",
+    "tenant_id",
+    "protocol_id",
+    "signal_id",
+    "decision_actor_id",
+    "outcome",
+    "decided_at",
+    "verification_loops_engagement_metadata",
+    "consistency_check_status",
+    "chain_hash",
+    "proof"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "protocol_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "signal_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "decision_actor_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "outcome": {
+     "type": "string",
+     "enum": [
+      "APPROVE",
+      "REJECT",
+      "DEFER",
+      "EXCEPTION",
+      "ESCALATE",
+      "DELEGATE",
+      "REMEDIATE"
+     ]
+    },
+    "decided_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "decision_latency_seconds": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "verification_loops_engagement_metadata": {
+     "type": "object",
+     "required": [
+      "review_duration_seconds",
+      "documents_accessed_count",
+      "checklist_completion_percent"
+     ],
+     "properties": {
+      "review_duration_seconds": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "documents_accessed_count": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "checklist_completion_percent": {
+       "$ref": "#/$defs/percentString"
+      }
+     }
+    },
+    "consistency_check_status": {
+     "type": "string",
+     "enum": [
+      "CONSISTENT",
+      "DIVERGENT",
+      "NOT_RUN"
+     ]
+    },
+    "consistency_check_divergence_notes": {
+     "type": "string"
+    },
+    "chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "previous_chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "proof": {
+     "$ref": "#/$defs/dataIntegrityProof"
+    }
+   }
+  },
+  "evidence": {
+   "type": "object",
+   "description": "Cryptographic record of the HITL Decision against obligation. Portable across capital events.",
+   "required": [
+    "id",
+    "tenant_id",
+    "hitl_decision_id",
+    "evidence_type",
+    "payload_content_hash",
+    "produced_at",
+    "producing_actor_id",
+    "chain_hash",
+    "proof"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "hitl_decision_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "evidence_type": {
+     "type": "string",
+     "minLength": 1
+    },
+    "payload_s3_key": {
+     "type": "string",
+     "description": "Object Lock Compliance mode storage key (production); optional in the synthetic reference."
+    },
+    "payload_content_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "produced_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "producing_actor_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "previous_chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "proof": {
+     "$ref": "#/$defs/dataIntegrityProof"
+    }
+   }
+  },
+  "accessGrant": {
+   "type": "object",
+   "description": "Counterparty entitlement architecture per the GET Legal Access Model v3 and Schema Independence Charter v3.",
+   "required": [
+    "id",
+    "grantor_tenant_id",
+    "grantee_tenant_id",
+    "scope_primitive",
+    "access_tier",
+    "granted_at",
+    "granted_by_actor_id",
+    "proof"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "grantor_tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "grantee_tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "scope_primitive": {
+     "$ref": "#/$defs/atomicPrimitive"
+    },
+    "scope_car_component": {
+     "$ref": "#/$defs/carComponent"
+    },
+    "scope_pricing_moment": {
+     "$ref": "#/$defs/fivePricingMoment"
+    },
+    "access_tier": {
+     "$ref": "#/$defs/accessTier"
+    },
+    "granted_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "revoked_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "granted_by_actor_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "proof": {
+     "$ref": "#/$defs/dataIntegrityProof"
+    }
+   }
+  },
+  "conformanceResult": {
+   "type": "object",
+   "description": "Output of running the conformance test harness (W4) against an engine's output. Required for engine certification per Architecture Lock v5.",
+   "required": [
+    "id",
+    "engine_identifier",
+    "test_run_at",
+    "test_suite_version",
+    "conformance_level",
+    "result",
+    "proof"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "engine_identifier": {
+     "type": "string",
+     "minLength": 1,
+     "description": "e.g., 'EE/Voyager AI v1.0'."
+    },
+    "test_run_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "test_suite_version": {
+     "type": "string",
+     "pattern": "^v[0-9]+$"
+    },
+    "conformance_level": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 4,
+     "description": "Four conformance levels retained from the existing model."
+    },
+    "result": {
+     "type": "string",
+     "enum": [
+      "PASS",
+      "FAIL",
+      "PARTIAL",
+      "ERROR"
+     ]
+    },
+    "test_case_results": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "test_case_id",
+       "result"
+      ],
+      "properties": {
+       "test_case_id": {
+        "type": "string"
+       },
+       "primitive": {
+        "$ref": "#/$defs/atomicPrimitive"
+       },
+       "result": {
+        "type": "string",
+        "enum": [
+         "PASS",
+         "FAIL",
+         "ERROR"
+        ]
+       },
+       "notes": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "exceptions_to_review": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "proof": {
+     "$ref": "#/$defs/dataIntegrityProof"
+    }
+   }
+  },
+  "auditEvent": {
+   "type": "object",
+   "description": "Cross-tenant or system event log.",
+   "required": [
+    "id",
+    "event_class",
+    "event_at",
+    "actor_id",
+    "subject_type",
+    "subject_id"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "oneOf": [
+      {
+       "$ref": "#/$defs/uuid"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "description": "This schema accepts null here for structural reasons only; it is not an exemption. Cryptographic Profile section 3.2 prohibits a JSON null in any record. Where an audit event is carried in the body of a record under the Evidence Record Specification v2, that record's proof covers the body, so the prohibition applies whether or not the audit event has a proof of its own. tenant_id is not required: an event that belongs to no tenant omits the member. Removing the null branch changes what validates, so it is not made in this PATCH; it is listed for normative version 1.1."
+    },
+    "event_class": {
+     "type": "string",
+     "enum": [
+      "AUTHENTICATION",
+      "AUTHORISATION_CHANGE",
+      "SCHEMA_DECISION",
+      "CERTIFICATION_DECISION",
+      "TENANT_PROVISIONING",
+      "ACTOR_PROVISIONING",
+      "POLICY_CHANGE",
+      "SYSTEM"
+     ]
+    },
+    "event_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "actor_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "subject_type": {
+     "type": "string"
+    },
+    "subject_id": {
+     "type": "string"
+    },
+    "payload": {
+     "type": "object"
+    }
+   }
+  },
+  "velocityComponents": {
+   "type": "object",
+   "required": [
+    "loop_latency_hours",
+    "escalation_responsiveness_hours",
+    "exception_resolution_days",
+    "protocol_adherence_variance_pct",
+    "evidence_completeness_pct",
+    "signal_decay_days"
+   ],
+   "properties": {
+    "loop_latency_hours": {
+     "$ref": "#/$defs/decimalString"
+    },
+    "escalation_responsiveness_hours": {
+     "$ref": "#/$defs/decimalString"
+    },
+    "exception_resolution_days": {
+     "$ref": "#/$defs/decimalString"
+    },
+    "protocol_adherence_variance_pct": {
+     "$ref": "#/$defs/decimalString"
+    },
+    "evidence_completeness_pct": {
+     "$ref": "#/$defs/percentString"
+    },
+    "signal_decay_days": {
+     "$ref": "#/$defs/decimalString"
+    }
+   },
+   "additionalProperties": false,
+   "description": "The six Governance Velocity components. Descriptive measurement, not a score."
+  },
+  "maturityTierReading": {
+   "type": "string",
+   "enum": [
+    "Foundational",
+    "Intermediate",
+    "Established",
+    "Established_trending_Advanced",
+    "Advanced"
+   ],
+   "description": "Lloyd's four-level Maturity Matrix reading with the trending sub-state. A counterparty interpretation, not a schema-authority assignment."
+  },
+  "governanceVelocityReading": {
+   "type": "object",
+   "description": "Measurement record: the six-component Governance Velocity for a period, weighted by Signal-class materiality. Signed by the producing party at the deployer; chained. The schema authority publishes the measurement and does not assign a tier.",
+   "required": [
+    "id",
+    "tenant_id",
+    "period",
+    "window",
+    "materiality_weighting_ref",
+    "components",
+    "produced_at",
+    "chain_hash",
+    "proof"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "period": {
+     "type": "string",
+     "minLength": 1
+    },
+    "window": {
+     "type": "string",
+     "minLength": 1
+    },
+    "materiality_weighting_ref": {
+     "type": "string",
+     "minLength": 1
+    },
+    "components": {
+     "$ref": "#/$defs/velocityComponents"
+    },
+    "produced_at": {
+     "$ref": "#/$defs/isoDateTime"
+    },
+    "chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "previous_chain_hash": {
+     "$ref": "#/$defs/digestRef"
+    },
+    "proof": {
+     "$ref": "#/$defs/dataIntegrityProof"
+    }
+   }
+  },
+  "maturityInterpretation": {
+   "type": "object",
+   "description": "Interpretation record: a counterparty's tier reading of a Governance Velocity series within its own framework and published thresholds. Signed by the reading counterparty, not the schema authority. Tier is interpretation, not measurement.",
+   "required": [
+    "id",
+    "tenant_id",
+    "period",
+    "reading_framework",
+    "thresholds_ref",
+    "reading_party",
+    "tier",
+    "proof"
+   ],
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "tenant_id": {
+     "$ref": "#/$defs/uuid"
+    },
+    "period": {
+     "type": "string",
+     "minLength": 1
+    },
+    "reading_framework": {
+     "type": "string",
+     "minLength": 1
+    },
+    "thresholds_ref": {
+     "type": "string",
+     "minLength": 1
+    },
+    "reading_party": {
+     "type": "string",
+     "minLength": 1
+    },
+    "tier": {
+     "$ref": "#/$defs/maturityTierReading"
+    },
+    "basis": {
+     "type": "string"
+    },
+    "proof": {
+     "$ref": "#/$defs/dataIntegrityProof"
+    }
+   }
+  }
+ },
+ "properties": {
+  "schema_version": {
+   "enum": [
+    "1.0"
+   ],
+   "description": "Normative version of the form MAJOR.MINOR per the Layer 1 Versioning Compatibility and Change-Control Policy section 3. Identifies the behaviour, not the document; the whole-integer editorial revision is carried in the filename and never here."
+  },
+  "tenants": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/tenant"
+   }
+  },
+  "actors": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/actor"
+   }
+  },
+  "protocols": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/protocol"
+   }
+  },
+  "signals": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/signal"
+   }
+  },
+  "hitl_decisions": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/hitlDecision"
+   }
+  },
+  "evidence": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/evidence"
+   }
+  },
+  "access_grants": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/accessGrant"
+   }
+  },
+  "conformance_results": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/conformanceResult"
+   }
+  },
+  "audit_events": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/auditEvent"
+   }
+  },
+  "velocity_readings": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/governanceVelocityReading"
+   }
+  },
+  "maturity_interpretations": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/maturityInterpretation"
+   }
+  }
+ },
+ "required": [
+  "schema_version",
+  "tenants",
+  "actors",
+  "protocols",
+  "signals",
+  "hitl_decisions",
+  "evidence",
+  "access_grants",
+  "conformance_results",
+  "audit_events"
+ ]
+}

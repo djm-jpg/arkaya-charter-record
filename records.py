@@ -196,6 +196,10 @@ DISCLOSURE_REGISTRATION = {
          "sha256": "bcf332ae71de87e6ca985668eaa1a0dba77b287912179a4d2f5ec838ca6392d3",
          "bytes": 92842, "document_date": "2026-11-18",
          "reason": "Successor issue: discloses decisions taken from 9 to 17 November 2026 that v7 could not carry, formal entries for the decisions that published v7, this record's own decisions of 18 November up to stated cut-offs, and six control failures. v3's to v7's entries are not repeated and are not superseded; v3 to v7 remain published and unchanged."},
+        {"version": "v9", "src": "conflicted-decisions-v9.md",
+         "sha256": "4cd0d29e3a9643fa8f5da78dc195a7b834f05f8118edf6f84bbf0ff6a471311d",
+         "bytes": 42656, "document_date": "2026-11-25",
+         "reason": "Successor issue: discloses formal entries for the decisions that closed and published v8, this record's own inclusion decisions of 23 November, eight typed decisions about the amendment of the publish-009 log, the founder's decisions of 26 November about this record's content, and seven control failures. v3's to v8's entries are not repeated and are not superseded; v3 to v8 remain published and unchanged."},
     ],
 }
 # END DISCLOSURE REGISTRATION
